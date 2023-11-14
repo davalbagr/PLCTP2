@@ -1,0 +1,24 @@
+
+var i;
+var j;
+var t;
+var ar;
+var size;
+
+def reverse(arr) {
+    while (i < j) {
+       t = arr[i];
+       arr[i] = arr[j];
+       arr[j] = t;
+       i = i+1;
+       j = j+1;
+    }
+    return;
+}
+
+size = 20;
+ar = alloc(size);
+ar[0] = 1;
+ar[19] = 2;
+reverse(ar);
+printi(ar[0]);
