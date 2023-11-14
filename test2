@@ -1,0 +1,22 @@
+var i;
+var j;
+var s;
+var a;
+var b;
+
+a = atoi(input());
+s = atoi(input());
+
+while (i < a) {
+    j = 0;
+    while (j < a) {
+        if (i+j == s) {
+            printi(i);
+            print(" ");
+            printi(j);
+            println();
+        }
+        j = j+1;
+    }
+    i = i+1;
+}
