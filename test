@@ -5,21 +5,26 @@ var t;
 var ar;
 var size;
 
-def reverse(arr) {
-    while (i < j) {
-       t = arr[i];
-       arr[i] = arr[j];
-       arr[j] = t;
-       i = i+1;
-       j = j-1;
-    }
-    return;
+size = atoi(input());
+ar = alloc(size);
+while (j < size) {
+    ar[j] = atoi(input());
+    j = j + 1;
+}
+j = j-1;
+
+while (i < j) {
+    t = ar[i];
+    ar[i] = ar[j];
+    ar[j] = t;
+    i = i+1;
+    j = j-1;
 }
 
-size = 20;
-j = size-1;
-ar = alloc(size);
-ar[0] = 1;
-ar[19] = 2;
-reverse(ar);
-printi(ar[0]);
+i=0;
+while (i < size) {
+    printi(ar[i]);
+    println();
+    i = i+1;
+}
+
