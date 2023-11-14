@@ -11,7 +11,7 @@ def reverse(arr) {
        arr[i] = arr[j];
        arr[j] = t;
        i = i+1;
-       j = j+1;
+       j = j-1;
     }
     return;
 }
