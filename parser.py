@@ -112,8 +112,8 @@ def p_declare_array(p):
         print(f'cannot redeclare identifier {p[2]}')
         error[0] = True
         raise SyntaxError
-    env.add_var(p[2], p[4])
-    output.write(f'PUSHN {p[4]}\n'.encode('ascii'))
+    env.add_var(p[2])
+    output.write(f'ALLOC {p[4]}\n'.encode('ascii'))
 
 
 
@@ -127,22 +127,8 @@ def p_stmt_assign(p):
     output.write(f'STOREG {address}\n'.encode('ascii'))
 
 def p_stmt_assign_arr(p):
-    '''stmt : arr_id '[' expr ']' add '=' expr ';' '''
+    '''stmt : expr '[' expr ']' '=' expr ';' '''
     output.write(b'STOREN\n')
-
-def p_add(p):
-    '''add :'''
-    output.write(b'ADD\n')
-
-def p_stmt_arr_id(p):
-    '''arr_id : ID '''
-    if not env.var_exists(p[1]):
-        print(f'variable {p[1]} has not been declared')
-        error[0] = True
-        raise SyntaxError
-    address = env.get_var(p[1])
-    output.write(b'PUSHGP\n')
-    output.write(f'PUSHI {address}\n'.encode('ascii'))
 
 def p_stmt_return(p):
     '''stmt : RETURN expr ';' 
@@ -229,8 +215,7 @@ def p_expr_id(p):
     output.write(f'PUSHG {address}\n'.encode('ascii'))
 
 def p_expr_ind(p):
-    '''expr : arr_id '[' expr ']' %prec INDEX '''
-    output.write(b'ADD\n')
+    '''expr : expr '[' expr ']' %prec INDEX '''
     output.write(b'LOADN\n')
 
 def p_expr_string(p):

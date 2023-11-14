@@ -1,0 +1,23 @@
+var size;
+var i;
+var j;
+var t;
+var a[100];
+var inp;
+
+def printarr(arr, size) {
+    i=0;
+    while (i < size) {
+        printi(arr[i]);
+        println();
+        i = i+1;
+    }
+    return;
+}
+
+a[0] = 0;
+a[1] = 0;
+a[2] = 0;
+a[3] = 0;
+a[4] = 0;
+printarr(a, 5);
