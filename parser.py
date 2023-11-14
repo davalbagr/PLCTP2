@@ -63,14 +63,6 @@ def p_stmt_while(p):
     output.write(f'lbl{p[6]}:\n'.encode())
     env.pop_jz_label()
 
-def p_stmt_break(p):
-    '''stmt : BREAK ';' '''
-    output.write(f'JUMP lbl{env.get_label()+1}\n'.encode('ascii'))
-
-def p_stmt_continue(p):
-    '''stmt : CONTINUE ';' '''
-    output.write(f'JUMP lbl{env.get_label()}\n'.encode('ascii'))
-
 def p_stmt_ifelse(p):
     '''stmt : IF '(' expr ')' jz block 
             | IF '(' expr ')' jz block ELSE jmp jz_label block '''

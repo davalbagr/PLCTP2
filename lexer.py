@@ -18,8 +18,6 @@ reserved = {
         'atoi': 'ATOI',
         'println': 'PRINTLN',
         'printi': 'PRINTI',
-        'break': 'BREAK',
-        'continue': 'CONTINUE',
 }
 tokens = (
         'ID',
