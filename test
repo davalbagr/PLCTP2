@@ -2,27 +2,30 @@
 var i;
 var j;
 var t;
-var ar[100];
+var a[100];
 var size;
+
+   
 
 size = atoi(input());
 while (j < size) {
-    ar[j] = atoi(input());
+    a[j] = atoi(input());
     j = j + 1;
 }
-j = size-1;
 
+i=0;
+j=size-1;
 while (i < j) {
-    t = ar[i];
-    ar[i] = ar[j];
-    ar[j] = t;
+    t = a[i];
+    a[i] = a[j];
+    a[j] = t;
     i = i+1;
     j = j-1;
 }
 
 i=0;
 while (i < size) {
-    printi(ar[i]);
+    printi(a[i]);
     println();
     i = i+1;
 }
