@@ -17,6 +17,7 @@ def reverse(arr) {
 }
 
 size = 20;
+j = size-1;
 ar = alloc(size);
 ar[0] = 1;
 ar[19] = 2;
