@@ -106,6 +106,16 @@ def p_declare(p):
     if len(p) == 4:
         output.write(b'PUSHI 0\n')
 
+def p_declare_array(p):
+    '''var_declare : VAR ID '[' NUM ']' ';' '''
+    if env.var_exists(p[2]):
+        print(f'cannot redeclare identifier {p[2]}')
+        error[0] = True
+        raise SyntaxError
+    env.add_var(p[2], p[4])
+    output.write(f'PUSHN {p[4]}\n'.encode('ascii'))
+
+
 
 def p_stmt_assign(p):
     '''stmt : ID '=' expr ';' '''
@@ -117,8 +127,12 @@ def p_stmt_assign(p):
     output.write(f'STOREG {address}\n'.encode('ascii'))
 
 def p_stmt_assign_arr(p):
-    '''stmt : arr_id '[' expr ']' '=' expr ';' '''
+    '''stmt : arr_id '[' expr ']' add '=' expr ';' '''
     output.write(b'STOREN\n')
+
+def p_add(p):
+    '''add :'''
+    output.write(b'ADD\n')
 
 def p_stmt_arr_id(p):
     '''arr_id : ID '''
@@ -127,7 +141,8 @@ def p_stmt_arr_id(p):
         error[0] = True
         raise SyntaxError
     address = env.get_var(p[1])
-    output.write(f'PUSHG {address}\n'.encode('ascii'))
+    output.write(b'PUSHGP\n')
+    output.write(f'PUSHI {address}\n'.encode('ascii'))
 
 def p_stmt_return(p):
     '''stmt : RETURN expr ';' 
@@ -161,10 +176,6 @@ def p_expr_str(p):
 def p_expr_atoi(p):
     '''expr : ATOI '(' expr ')' '''
     output.write(b'ATOI\n')
-
-def p_expr_alloc(p):
-    '''expr : ALLOC '(' expr ')' '''
-    output.write(b'ALLOCN\n')
 
 def p_expr_binop(p):
     '''expr : expr '+' expr 
@@ -218,7 +229,8 @@ def p_expr_id(p):
     output.write(f'PUSHG {address}\n'.encode('ascii'))
 
 def p_expr_ind(p):
-    '''expr : expr '[' expr ']' %prec INDEX '''
+    '''expr : arr_id '[' expr ']' %prec INDEX '''
+    output.write(b'ADD\n')
     output.write(b'LOADN\n')
 
 def p_expr_string(p):

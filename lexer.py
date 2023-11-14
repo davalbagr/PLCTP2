@@ -14,7 +14,6 @@ reserved = {
         'var': 'VAR',
         'true': 'TRUE',
         'false': 'FALSE',
-        'alloc': 'ALLOC',
         'atoi': 'ATOI',
         'println': 'PRINTLN',
         'printi': 'PRINTI',

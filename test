@@ -2,16 +2,15 @@
 var i;
 var j;
 var t;
-var ar;
+var ar[100];
 var size;
 
 size = atoi(input());
-ar = alloc(size);
 while (j < size) {
     ar[j] = atoi(input());
     j = j + 1;
 }
-j = j-1;
+j = size-1;
 
 while (i < j) {
     t = ar[i];

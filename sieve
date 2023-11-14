@@ -1,12 +1,12 @@
 var L;
 var R;
 var M;
-var arr;
+var arr[100];
 var i;
 var sq;
 var t;
 var counts;
-var res;
+var res[100];
 var ptr1;
 var sv;
 var size;
@@ -28,7 +28,6 @@ def sqrt(x) {
 }
 
 def sieve(n) {
-    arr = alloc(n+1);
     arr[0] = 1;
     arr[1] = 1;
     i = 2;
@@ -50,7 +49,6 @@ def sieve(n) {
         }
         i = i+1;
     }
-    res = alloc(counts+1);
     res[0] = counts;
     ptr1 = 1;
     i = 0;
