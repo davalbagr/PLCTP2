@@ -106,17 +106,6 @@ def p_declare(p):
     if len(p) == 4:
         output.write(b'PUSHI 0\n')
 
-def p_declare_array(p):
-    '''var_declare : VAR ID '[' NUM ']' ';' '''
-    if env.var_exists(p[2]):
-        print(f'cannot redeclare identifier {p[2]}')
-        error[0] = True
-        raise SyntaxError
-    env.add_var(p[2])
-    output.write(f'ALLOC {p[4]}\n'.encode('ascii'))
-
-
-
 def p_stmt_assign(p):
     '''stmt : ID '=' expr ';' '''
     if not env.var_exists(p[1]):
@@ -150,6 +139,14 @@ def p_stmt_expr(p):
 # --------------------------
 
 # - expressoes
+
+def p_expr_alloc(p):
+    '''expr : ALLOC '(' NUM ')' '''
+    output.write(f'ALLOC {p[3]}\n'.encode('ascii'))
+
+def p_expr_free(p):
+    '''expr : FREE '(' expr ')' '''
+    output.write(b'FREE\n')
 
 def p_expr_input(p):
     '''expr : INPUT '(' ')' '''

@@ -2,7 +2,7 @@
 var i;
 var j;
 var t;
-var a[100];
+var a = alloc(100);
 var size;
 
    

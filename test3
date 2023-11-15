@@ -1,6 +1,6 @@
 var a;
 var b;
-var arr[10];
+var arr = alloc(10);
 
 arr[0] = 1;
 arr[9] = 2;
