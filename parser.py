@@ -5,8 +5,6 @@ from lexer import tokens
 
 output = tempfile.TemporaryFile()
 env = EnvManager()
-error = [False]
-entrypoint = [False]
 inside_fun = [False]
 
 precedence = (
@@ -35,7 +33,7 @@ def p_fun(p):
            | DEF fun_name '(' ')' block '''
     if env.fun_exists(p[2]):
         print('cannot redeclare function')
-        error[0] = True
+        parser.success = False
         raise SyntaxError
     env.add_fun(p[2])
     env.pop_fun_scope()
@@ -100,7 +98,7 @@ def p_declare(p):
                    | VAR ID ';' '''
     if env.var_exists(p[2]):
         print(f'cannot redeclare identifier {p[2]}')
-        error[0] = True
+        parser.success = False
         raise SyntaxError
     env.add_var(p[2])
     if len(p) == 4:
@@ -110,7 +108,7 @@ def p_stmt_assign(p):
     '''stmt : ID '=' expr ';' '''
     if not env.var_exists(p[1]):
         print(f'variable {p[1]} has not been declared')
-        error[0] = True
+        parser.success = False
         raise SyntaxError
     address = env.get_var(p[1])
     output.write(f'STOREG {address}\n'.encode('ascii'))
@@ -124,7 +122,7 @@ def p_stmt_return(p):
             | RETURN ';' '''
     if not inside_fun[0]:
         print('can only return inside of a function')
-        error[0] = True
+        parser.success = False
         raise SyntaxError
     output.write(b'RETURN\n')
 
@@ -206,7 +204,7 @@ def p_expr_id(p):
     '''expr : ID '''
     if not env.var_exists(p[1]):
         print(f'Unknown identifier {p[1]}')
-        error[0] = True
+        parser.success = False
         raise SyntaxError
     address = env.get_var(p[1])
     output.write(f'PUSHG {address}\n'.encode('ascii'))
@@ -235,8 +233,8 @@ def p_expr_fun(p):
     '''expr : ID '(' exprlist ')' 
             | ID '(' ')' '''
     if not env.fun_exists(p[1]):
+        parser.success = False
         print(f'Unknown function call {p[1]}')
-        error[0] = True
         raise SyntaxError
     output.write(f'PUSHA {p[1]}\n'.encode('ascii'))
     output.write(b'CALL\n')
@@ -276,7 +274,7 @@ def p_block(p):
              | stmt '''
 
 def p_error(p):
-    error[0] = True
+    parser.success = False
     print(f'Syntax error at token {p.type} line {p.lineno}')
 
 parser = yacc.yacc(start='program')
@@ -287,8 +285,9 @@ if __name__ == '__main__':
     file = sys.argv[1]
     f = open(file, 'r+')
     try:
+        parser.success = True
         res = parser.parse(f.read())
-        if not error[0]:
+        if parser.success:
             output.seek(0)
             print(output.read().decode())
     except Exception as e:
