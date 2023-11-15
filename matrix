@@ -1,0 +1,10 @@
+var m = alloc(10);
+var i;
+
+while (i < 10) {
+    m[i] = alloc(10);
+    i = i+1;
+}
+
+m[2][3] = 5;
+printi(m[2][3]);

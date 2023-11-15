@@ -1,6 +1,7 @@
 class EnvManager():
     def __init__(self):
         self.vars = {}
+        self.matrix = {}
         self.count = 0
         self.fun_scope = {}
         self.fun_scope_counter = 0
@@ -11,6 +12,12 @@ class EnvManager():
     def add_var(self, name, offset=1):
         self.vars[name] = self.count
         self.count += offset
+
+    def add_matrix(self, name, row, col):
+        self.matrix[name] = (row, col)
+
+    def get_matrix(self, name):
+        return self.matrix[name]
 
     def get_var(self, name):
         if name not in self.fun_scope:

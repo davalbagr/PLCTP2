@@ -136,7 +136,7 @@ def p_stmt_expr(p):
     '''stmt : expr ';' '''
 
 def p_stmt_free(p):
-    '''stmt : FREE '(' expr ')' '''
+    '''stmt : FREE '(' expr ')' ';' '''
     output.write(b'FREE\n')
     
 

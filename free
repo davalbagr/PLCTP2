@@ -1,0 +1,3 @@
+var arr = alloc(100);
+
+free(arr);
