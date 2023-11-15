@@ -134,6 +134,10 @@ def p_stmt_printi(p):
 
 def p_stmt_expr(p):
     '''stmt : expr ';' '''
+
+def p_stmt_free(p):
+    '''stmt : FREE '(' expr ')' '''
+    output.write(b'FREE\n')
     
 
 # --------------------------
@@ -143,10 +147,6 @@ def p_stmt_expr(p):
 def p_expr_alloc(p):
     '''expr : ALLOC '(' NUM ')' '''
     output.write(f'ALLOC {p[3]}\n'.encode('ascii'))
-
-def p_expr_free(p):
-    '''expr : FREE '(' expr ')' '''
-    output.write(b'FREE\n')
 
 def p_expr_input(p):
     '''expr : INPUT '(' ')' '''
