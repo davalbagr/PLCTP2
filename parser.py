@@ -35,6 +35,7 @@ def p_fun(p):
         print('cannot redeclare function')
         parser.success = False
         raise SyntaxError
+    output.write(b'RETURN\n')
     env.add_fun(p[2])
     env.pop_fun_scope()
     inside_fun[0] = False
