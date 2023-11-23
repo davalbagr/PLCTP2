@@ -16,9 +16,7 @@ reserved = {
         'false': 'FALSE',
         'atoi': 'ATOI',
         'println': 'PRINTLN',
-        'printi': 'PRINTI',
-        'alloc': 'ALLOC',
-        'free': 'FREE'
+        'printi': 'PRINTI'
 }
 tokens = (
         'ID',

@@ -7,10 +7,14 @@ class EnvManager():
         self.fun = set()
         self.label = 0
         self.jz_labels = []
+        self.arrays = set()
 
     def add_var(self, name, offset=1):
-        self.vars[name] = self.count
+        if name is not None:
+            self.vars[name] = self.count
+        prev = self.count
         self.count += offset
+        return prev
 
     def get_var(self, name):
         if name not in self.fun_scope:
@@ -46,6 +50,12 @@ class EnvManager():
     
     def pop_jz_label(self):
         return self.jz_labels.pop()
+    
+    def set_array(self, name):
+        self.arrays.add(name)
+
+    def is_array(self, name):
+        return name in self.arrays
 
 
     

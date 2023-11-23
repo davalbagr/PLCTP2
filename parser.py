@@ -6,6 +6,7 @@ from lexer import tokens
 output = tempfile.TemporaryFile()
 env = EnvManager()
 inside_fun = [False]
+has_return = [False]
 
 precedence = (
     ('left', 'AND', 'OR', 'EQ', 'NEQ'),
@@ -96,14 +97,34 @@ def p_new_label(p):
 
 def p_declare(p):
     '''var_declare : VAR ID '=' expr ';' 
-                   | VAR ID ';' '''
+                   | VAR ID ';' 
+                   | VAR ID '[' NUM ']' ';' 
+                   | VAR ID '[' NUM ']' '[' NUM ']' ';' '''
     if env.var_exists(p[2]):
         print(f'cannot redeclare identifier {p[2]}')
         parser.success = False
         raise SyntaxError
-    env.add_var(p[2])
+    if len(p) == 7:
+        env.add_var(p[2], p[4])
+    elif len(p) > 7:
+        env.add_var(p[2], p[4]*p[7])
+    else:
+        env.add_var(p[2])
     if len(p) == 4:
         output.write(b'PUSHI 0\n')
+    if len(p) > 6:
+        env.set_array(p[2])
+        output.write(f'PUSHN {p[4]}\n'.encode('ascii'))
+        if len(p) > 7:
+            address = env.get_var(p[2])
+            for i in range(p[4]):
+                ad = env.add_var(None, p[7])
+                output.write(b'PUSHGP\n')
+                output.write(f'PUSHI {ad}\n'.encode('ascii'))
+                output.write(b'PADD\n')
+                output.write(f'STOREG {address+i}\n'.encode('ascii'))
+                output.write(f'PUSHN {p[7]}\n'.encode('ascii'))
+
 
 def p_stmt_assign(p):
     '''stmt : ID '=' expr ';' '''
@@ -134,18 +155,9 @@ def p_stmt_printi(p):
 def p_stmt_expr(p):
     '''stmt : expr ';' '''
 
-def p_stmt_free(p):
-    '''stmt : FREE '(' expr ')' ';' '''
-    output.write(b'FREE\n')
-    
-
 # --------------------------
 
 # - expressoes
-
-def p_expr_alloc(p):
-    '''expr : ALLOC '(' NUM ')' '''
-    output.write(f'ALLOC {p[3]}\n'.encode('ascii'))
 
 def p_expr_input(p):
     '''expr : INPUT '(' ')' '''
@@ -208,7 +220,12 @@ def p_expr_id(p):
         parser.success = False
         raise SyntaxError
     address = env.get_var(p[1])
-    output.write(f'PUSHG {address}\n'.encode('ascii'))
+    if env.is_array(p[1]):
+        output.write(b'PUSHGP\n')
+        output.write(f'PUSHI {address}\n'.encode('ascii'))
+        output.write(b'PADD\n')
+    else:
+        output.write(f'PUSHG {address}\n'.encode('ascii'))
 
 def p_expr_ind(p):
     '''expr : expr '[' expr ']' %prec INDEX '''
