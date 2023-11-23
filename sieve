@@ -1,12 +1,12 @@
 var L;
 var R;
 var M;
-var arr = alloc(100);
+var arr[100];
 var i;
 var sq;
 var t;
 var counts;
-var res = alloc(100);
+var res[100];
 var ptr1;
 var sv;
 var size;
