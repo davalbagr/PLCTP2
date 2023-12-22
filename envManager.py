@@ -4,14 +4,15 @@ class EnvManager():
         self.count = 0
         self.fun_scope = {}
         self.fun_scope_counter = 0
-        self.fun = set()
+        self.fun = {}
         self.label = 0
         self.jz_labels = []
         self.arrays = set()
+        self.fun_return = {}
 
-    def add_var(self, name, offset=1):
+    def add_var(self, name, typ, offset=1):
         if name is not None:
-            self.vars[name] = self.count
+            self.vars[name] = (self.count, typ)
         prev = self.count
         self.count += offset
         return prev
@@ -28,11 +29,15 @@ class EnvManager():
     def fun_exists(self, name):
         return name in self.fun
 
-    def add_fun(self, name):
-        self.fun.add(name)
+    def get_fun_type(self, name):
+        return self.fun[name]
 
-    def add_fun_var(self, name):
-        self.fun_scope[name] = self.count+self.fun_scope_counter
+    def add_fun(self, name, typ, rtrn):
+        self.fun[name] = typ
+        self.fun_return[name] = rtrn
+
+    def add_fun_var(self, name, typ):
+        self.fun_scope[name] = (self.count+self.fun_scope_counter, typ)
         self.fun_scope_counter += 1
         
     def pop_fun_scope(self):
@@ -52,10 +57,10 @@ class EnvManager():
         return self.jz_labels.pop()
     
     def set_array(self, name):
-        self.arrays.add(name)
+        self.vars[name] = (self.vars[name][0], [self.vars[name][1]])
 
-    def is_array(self, name):
-        return name in self.arrays
+    def get_fun_return(self, name):
+        return self.fun_return[name]
 
 
     

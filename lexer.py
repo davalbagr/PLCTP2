@@ -12,11 +12,11 @@ reserved = {
     'str': 'STR',
     'def': 'DEF',
     'var': 'VAR',
-    'true': 'TRUE',
-    'false': 'FALSE',
     'atoi': 'ATOI',
     'println': 'PRINTLN',
-    'printi': 'PRINTI'
+    'string': 'STRINGTYPE',
+    'int': 'INTTYPE',
+    'void': 'VOIDTYPE'
 }
 tokens = (
              'ID',
@@ -49,6 +49,9 @@ def t_COMMENT(t):
     r'//.*'
     pass
 
+def t_NEWLINE(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
 
 t_STRING = r'\"[^\"]*\"'
 t_EQ = r'=='
@@ -58,7 +61,7 @@ t_LTE = r'<='
 t_GTE = r'>='
 t_NEQ = r'!='
 
-t_ignore = '\t\r\n\f\v '
+t_ignore = '\t\r\f\v '
 
 
 def t_error(t):

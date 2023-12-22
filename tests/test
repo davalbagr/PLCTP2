@@ -1,9 +1,9 @@
 
-var i;
-var j;
-var t;
-var a[100]; 
-var size;
+var i int;
+var j int;
+var t int;
+var a[100] int;
+var size int;
 
    
 
@@ -25,7 +25,7 @@ while (i < j) {
 
 i=0;
 while (i < size) {
-    printi(a[i]);
+    print(a[i]);
     println();
     i = i+1;
 }

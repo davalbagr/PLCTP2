@@ -1,17 +1,17 @@
-var L;
-var R;
-var M;
-var arr[100];
-var i;
-var sq;
-var t;
-var counts;
-var res[100];
-var ptr1;
-var sv;
-var size;
+var L int;
+var R int;
+var M int;
+var arr[100] int;
+var i int;
+var sq int;
+var t int;
+var counts int;
+var res[100] int;
+var ptr1 int;
+var sv [int];
+var size int;
 
-def sqrt(x) {
+def sqrt(x int) int {
 	R = x + 1;
 
     while (L != R - 1)
@@ -27,7 +27,7 @@ def sqrt(x) {
     return L;
 }
 
-def sieve(n) {
+def sieve(n int) [int] {
     arr[0] = 1;
     arr[1] = 1;
     i = 2;
@@ -44,7 +44,7 @@ def sieve(n) {
     counts = 0;
     i = 0;
     while (i <= n) {
-        if (!arr[i]) {
+        if (!(arr[i])) {
            counts = counts+1; 
         }
         i = i+1;
@@ -53,7 +53,7 @@ def sieve(n) {
     ptr1 = 1;
     i = 0;
     while (i <= n) {
-        if (!arr[i]) {
+        if (!(arr[i])) {
             res[ptr1] = i;
             ptr1 = ptr1+1;
         }
@@ -66,12 +66,7 @@ sv = sieve(atoi(input()));
 size = sv[0];
 i = 1;
 while (i <= size) {
-    printi(sv[i]);
+    print(sv[i]);
     println();
     i = i+1;
 }
-
-
-
-
-

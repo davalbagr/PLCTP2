@@ -5,7 +5,7 @@ from lexer import tokens
 
 output = tempfile.TemporaryFile()
 env = EnvManager()
-inside_fun = [False]
+inside_fun = []
 has_return = [False]
 
 precedence = (
@@ -34,22 +34,30 @@ def p_entrypoint(p):
 
 
 def p_fun(p):
-    '''fun : DEF fun_name '(' idlist ')' block 
-           | DEF fun_name '(' ')' block '''
-    if env.fun_exists(p[2]):
-        print('cannot redeclare function')
-        parser.success = False
+    '''fun : DEF fun_name '(' funargs ')' ftype '{' stmtlist '}' '''
+    if not has_return[0] and inside_fun[1] is not None:
+        print('no return statement inside funtion')
         raise SyntaxError
     output.write(b'RETURN\n')
-    env.add_fun(p[2])
+    env.add_fun(p[2], p[4], p[6])
     env.pop_fun_scope()
-    inside_fun[0] = False
+    inside_fun.clear()
 
 
 def p_fun_name(p):
     '''fun_name : ID '''
+    if env.fun_exists(p[1]):
+        print('cannot redeclare function')
+        parser.success = False
+        raise SyntaxError
     output.write(f'{p[1]}:\n'.encode('ascii'))
-    inside_fun[0] = True
+    inside_fun.append(p[1])
+    p[0] = p[1]
+
+
+def p_ftype(p):
+    '''ftype : type'''
+    inside_fun.append(p[1])
     p[0] = p[1]
 
 
@@ -57,7 +65,13 @@ def p_fun_name(p):
 
 def p_stmt_print(p):
     '''stmt : PRINT '(' expr ')' ';' '''
-    output.write(b'WRITES\n')
+    if p[3] == int:
+        output.write(b'WRITEI\n')
+    elif p[3] == str:
+        output.write(b'WRITES\n')
+    else:
+        print('cannot print value')
+        raise SyntaxError
 
 
 def p_stmt_println(p):
@@ -66,19 +80,25 @@ def p_stmt_println(p):
 
 
 def p_stmt_while(p):
-    '''stmt : WHILE new_label expr jz block '''
+    '''stmt : WHILE new_label '(' expr ')' jz block '''
+    if p[4] != int:
+        print('Type mismatch line:', p.lineno(4))
+        raise SyntaxError
     output.write(f'JUMP lbl{p[2]}\n'.encode())
-    output.write(f'lbl{p[4]}:\n'.encode())
+    output.write(f'lbl{p[6]}:\n'.encode())
     env.pop_jz_label()
 
 
 def p_stmt_ifelse(p):
-    '''stmt : IF expr jz block 
-            | IF expr jz block ELSE jmp jz_label block '''
-    if len(p) == 5:
+    '''stmt : IF '(' expr ')' jz block
+            | IF '(' expr ')' jz block ELSE jmp jz_label block '''
+    if p[3] != int:
+        print('Type mismatch line:', p.lineno(3))
+        raise SyntaxError
+    if len(p) == 7:
         output.write(f'lbl{env.get_label()}:\n'.encode('ascii'))
     else:
-        output.write(f'lbl{p[6]}:\n'.encode())
+        output.write(f'lbl{p[8]}:\n'.encode())
 
 
 def p_jmp(p):
@@ -108,35 +128,49 @@ def p_new_label(p):
     p[0] = env.get_label()
 
 
-def p_declare(p):
-    '''var_declare : VAR ID '=' expr ';' 
-                   | VAR ID ';' 
-                   | VAR ID '[' NUM ']' ';' 
-                   | VAR ID '[' NUM ']' '[' NUM ']' ';' '''
+def p_declare_arr1(p):
+    '''var_declare : VAR ID '[' NUM ']' type ';' '''
+    if env.var_exists(p[2]):
+        print(f'cannot redeclare identifier {p[2]}')
+        parser.success = False
+        raise SyntaxError
+    env.add_var(p[2], [p[6]], p[4])
+    output.write(f'PUSHN {p[4]}\n'.encode('ascii'))
+
+
+def p_declare_arr2(p):
+    '''var_declare : VAR ID '[' NUM ']' '[' NUM ']' type ';' '''
+    if env.var_exists(p[2]):
+        print(f'cannot redeclare identifier {p[2]}')
+        parser.success = False
+        raise SyntaxError
+    env.add_var(p[2], [[p[9]]], p[4] * p[7])
+    output.write(f'PUSHN {p[4]}\n'.encode('ascii'))
+    address, typ = env.get_var(p[2])
+    for i in range(p[4]):
+        ad = env.add_var(None, None, p[7])
+        output.write(b'PUSHGP\n')
+        output.write(f'PUSHI {ad}\n'.encode('ascii'))
+        output.write(b'PADD\n')
+        output.write(f'STOREG {address + i}\n'.encode('ascii'))
+        output.write(f'PUSHN {p[7]}\n'.encode('ascii'))
+
+
+def p_declare_var(p):
+    '''var_declare : VAR ID type '=' expr ';'
+                   | VAR ID type ';' '''
     if env.var_exists(p[2]):
         print(f'cannot redeclare identifier {p[2]}')
         parser.success = False
         raise SyntaxError
     if len(p) == 7:
-        env.add_var(p[2], p[4])
-    elif len(p) > 7:
-        env.add_var(p[2], p[4] * p[7])
+        if p[5] != p[3]:
+            print('Type mismatch line:', p.lineno(1))
+            parser.success = False
+            raise SyntaxError
     else:
-        env.add_var(p[2])
-    if len(p) == 4:
         output.write(b'PUSHI 0\n')
-    if len(p) > 6:
-        env.set_array(p[2])
-        output.write(f'PUSHN {p[4]}\n'.encode('ascii'))
-        if len(p) > 7:
-            address = env.get_var(p[2])
-            for i in range(p[4]):
-                ad = env.add_var(None, p[7])
-                output.write(b'PUSHGP\n')
-                output.write(f'PUSHI {ad}\n'.encode('ascii'))
-                output.write(b'PADD\n')
-                output.write(f'STOREG {address + i}\n'.encode('ascii'))
-                output.write(f'PUSHN {p[7]}\n'.encode('ascii'))
+    env.add_var(p[2], p[3])
 
 
 def p_stmt_assign(p):
@@ -145,28 +179,37 @@ def p_stmt_assign(p):
         print(f'variable {p[1]} has not been declared')
         parser.success = False
         raise SyntaxError
-    address = env.get_var(p[1])
+    address, typ = env.get_var(p[1])
+    if typ != p[3]:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
     output.write(f'STOREG {address}\n'.encode('ascii'))
 
 
 def p_stmt_assign_arr(p):
     '''stmt : expr '[' expr ']' '=' expr ';' '''
+    if type(p[1]) != list or p[1][0] != p[6] or p[3] != int:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
     output.write(b'STOREN\n')
 
 
 def p_stmt_return(p):
     '''stmt : RETURN expr ';' 
             | RETURN ';' '''
-    if not inside_fun[0]:
+    if not inside_fun:
         print('can only return inside of a function')
         parser.success = False
         raise SyntaxError
+    typ = p[2] if len(p) == 4 else None
+    if typ != inside_fun[1]:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
+    has_return[0] = True
     output.write(b'RETURN\n')
-
-
-def p_stmt_printi(p):
-    '''stmt : PRINTI '(' expr ')' ';' '''
-    output.write(b'WRITEI\n')
 
 
 def p_stmt_expr(p):
@@ -180,16 +223,24 @@ def p_stmt_expr(p):
 def p_expr_input(p):
     '''expr : INPUT '(' ')' '''
     output.write(b'READ\n')
+    p[0] = str
 
 
 def p_expr_str(p):
     '''expr : STR '(' expr ')' '''
     output.write(b'STRI\n')
+    p[0] = str
 
 
 def p_expr_atoi(p):
     '''expr : ATOI '(' expr ')' '''
-    output.write(b'ATOI\n')
+    if p[3] == str:
+        output.write(b'ATOI\n')
+    else:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
+    p[0] = int
 
 
 def p_expr_binop(p):
@@ -221,20 +272,39 @@ def p_expr_binop(p):
            '==': b'EQUAL\n',
            '$': b'CONCAT\n',
            '!=': b'EQUAL\nNOT\n'}
+    if p[2] == '$' and (p[1] != str or p[3] != str):
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
+    if p[1] != int or p[3] != int:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
     output.write(ops[p[2]])
     if p[2] == '/':
         output.write(b'FTOI\n')
+    p[0] = int if p[2] != '$' else str
 
 
 def p_expr_not(p):
     '''expr : '!' expr '''
+    if p[2] != int:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
     output.write(b'NOT\n')
+    p[0] = int
 
 
 def p_expr_neg(p):
     '''expr : '-' expr %prec UMINUS '''
+    if p[2] != int:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
     output.write(b'PUSHI -1\n')
     output.write(b'MUL\n')
+    p[0] = int
 
 
 def p_expr_id(p):
@@ -243,56 +313,77 @@ def p_expr_id(p):
         print(f'Unknown identifier {p[1]}')
         parser.success = False
         raise SyntaxError
-    address = env.get_var(p[1])
-    if env.is_array(p[1]):
+    address, typ = env.get_var(p[1])
+    if type(typ) == list and p[1] not in env.fun_scope:
         output.write(b'PUSHGP\n')
         output.write(f'PUSHI {address}\n'.encode('ascii'))
         output.write(b'PADD\n')
     else:
         output.write(f'PUSHG {address}\n'.encode('ascii'))
+    p[0] = typ
 
 
 def p_expr_ind(p):
     '''expr : expr '[' expr ']' %prec INDEX '''
+    if type(p[1]) != list or p[3] != int:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
     output.write(b'LOADN\n')
+    p[0] = p[1][0]
 
 
 def p_expr_string(p):
     '''expr : STRING '''
     output.write(f'PUSHS {p[1]}\n'.encode('ascii'))
+    p[0] = str
 
 
 def p_expr_num(p):
     '''expr : NUM '''
     output.write(f'PUSHI {p[1]}\n'.encode('ascii'))
-
-
-def p_expr_true(p):
-    '''expr : TRUE '''
-    output.write(b'PUSHI 1\n')
-
-
-def p_expr_false(p):
-    '''expr : FALSE '''
-    output.write(b'PUSHI 0\n')
+    p[0] = int
 
 
 def p_expr_fun(p):
-    '''expr : ID '(' exprlist ')' 
-            | ID '(' ')' '''
+    '''expr : ID '(' fcall ')' '''
     if not env.fun_exists(p[1]):
         parser.success = False
         print(f'Unknown function call {p[1]}')
         raise SyntaxError
+    if env.get_fun_type(p[1]) != p[3]:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
     output.write(f'PUSHA {p[1]}\n'.encode('ascii'))
     output.write(b'CALL\n')
-
+    p[0] = env.get_fun_return(p[1])
 
 def p_expr(p):
     '''expr : '(' expr ')' '''
+    p[0] = p[2]
 
 
 # ------------------------
+
+def p_type_string(p):
+    '''type : STRINGTYPE'''
+    p[0] = str
+
+
+def p_type_int(p):
+    '''type : INTTYPE'''
+    p[0] = int
+
+
+def p_type_void(p):
+    '''type : VOIDTYPE'''
+
+
+def p_type_arr(p):
+    '''type :  '[' type ']' '''
+    p[0] = [p[2]]
+
 
 def p_declist(p):
     '''declist : declist var_declare
@@ -309,18 +400,36 @@ def p_stmtlist(p):
                 |'''
 
 
+def p_funargs(p):
+    ''' funargs : idlist
+                 |'''
+    return [] if len(p) == 1 else p[1]
+
+
 def p_idlist(p):
-    '''idlist : idlist ',' ID
-              | ID '''
-    if len(p) == 2:
-        env.add_fun_var(p[1])
+    '''idlist : idlist ',' ID type
+              | ID type '''
+    if len(p) == 3:
+        env.add_fun_var(p[1], p[2])
+        p[0] = [p[2]]
     else:
-        env.add_fun_var(p[3])
+        env.add_fun_var(p[3], p[4])
+        p[0] = p[1] + [p[4]]
+
+
+def p_fcall(p):
+    '''fcall : exprlist
+             |'''
+    return [] if len(p) == 1 else p[1]
 
 
 def p_exprlist(p):
     '''exprlist : exprlist ',' expr
                 | expr '''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1] + [p[3]]
 
 
 def p_block(p):

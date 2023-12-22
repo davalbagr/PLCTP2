@@ -1,10 +1,10 @@
-var a;
-var b;
-var arr[10];
+var a int;
+var b int;
+var arr[10] int;
 
 arr[0] = 1;
 arr[9] = 2;
 
-printi(arr[0]);
+print(arr[0]);
 println();
-printi(arr[9]);
+print(arr[9]);

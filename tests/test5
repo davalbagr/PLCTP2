@@ -1,14 +1,11 @@
-var size;
-var i;
-var j;
-var t;
-var a[100];
-var inp;
+var size int;
+var i int;
+var a[5] int;
 
-def printarr(arr, size) {
+def printarr(arr [int], size int) void {
     i=0;
     while (i < size) {
-        printi(arr[i]);
+        print(arr[i]);
         println();
         i = i+1;
     }
@@ -16,8 +13,8 @@ def printarr(arr, size) {
 }
 
 a[0] = 0;
-a[1] = 0;
-a[2] = 0;
-a[3] = 0;
-a[4] = 0;
+a[1] = 4;
+a[2] = 7;
+a[3] = 9;
+a[4] = 34;
 printarr(a, 5);

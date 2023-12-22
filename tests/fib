@@ -1,8 +1,8 @@
-var p1;
-var p2;
-var t;
+var p1 int;
+var p2 int;
+var t int;
 
-def fib(n) {
+def fib(n int) int {
    p1 = 0;
    p2 = 1;
    while (n > 0) {
@@ -14,4 +14,4 @@ def fib(n) {
    return p1;
 }
 
-printi(fib(atoi(input())));
+print(fib(atoi(input())));

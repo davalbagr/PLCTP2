@@ -1,8 +1,8 @@
-var i;
-var j;
-var s;
-var a;
-var b;
+var i int;
+var j int;
+var s int;
+var a int;
+var b int;
 
 a = atoi(input());
 s = atoi(input());
@@ -11,9 +11,9 @@ while (i < a) {
     j = 0;
     while (j < a) {
         if (i+j == s) {
-            printi(i);
+            print(i);
             print(" ");
-            printi(j);
+            print(j);
             println();
         }
         j = j+1;

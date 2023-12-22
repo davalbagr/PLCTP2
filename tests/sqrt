@@ -1,9 +1,9 @@
-var L;
-var R;
-var M; 
-var res;
+var L int;
+var R int;
+var M int;
+var res int;
 
-def sqrt(x) {
+def sqrt(x int) int {
 	R = x+1;
 
     while (L != R - 1)
@@ -20,4 +20,4 @@ def sqrt(x) {
 }
 
 res = sqrt(atoi(input()));
-printi(res);
+print(res);
