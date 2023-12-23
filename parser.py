@@ -39,6 +39,7 @@ def p_fun(p):
         print('no return statement inside funtion')
         raise SyntaxError
     output.write(b'RETURN\n')
+    env.add_fun(p[2], p[4], p[6])
     env.pop_fun_scope()
     inside_fun.clear()
 
@@ -56,8 +57,7 @@ def p_fun_name(p):
 
 def p_ftype(p):
     '''ftype : type'''
-    env.add_fun(inside_fun[0], inside_fun[1], p[1])
-    inside_fun[1] = p[1]
+    inside_fun.append(p[1])
     p[0] = p[1]
 
 
