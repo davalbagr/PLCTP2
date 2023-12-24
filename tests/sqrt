@@ -1,9 +1,10 @@
-var L;
-var R;
-var M; 
-var res;
+int L;
+int R;
+int M; 
+int res;
+int x;
 
-def sqrt(x) {
+def sqrt(x) int {
 	R = x+1;
 
     while (L != R - 1)

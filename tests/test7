@@ -1,0 +1,17 @@
+int a1;
+int a2;
+int c;
+int d;
+
+def soma (c, d) int {
+    c = c + d;
+    return c;
+}
+
+a1 = 2;
+a2 = 3;
+
+d = soma(a1, a2);
+printi(d);
+println();
+prints("ahjads");

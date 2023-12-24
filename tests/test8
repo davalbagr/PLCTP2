@@ -1,0 +1,20 @@
+int a1;
+int a2;
+int a3;
+int c;
+int d;
+int r;
+int e;
+
+def sub(c, d, e) void {
+    r = d - c;
+    printi(e);
+    printi(r);
+    return;
+}
+
+a1 = 2;
+a2 = atoi(input());
+a3 = a1 + a2;
+
+sub(a1, a2, a3);

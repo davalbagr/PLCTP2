@@ -1,0 +1,14 @@
+int a[10];
+int b;
+int c[3][4];
+int d;
+
+b = 5;
+a[b] = 2;
+printi(a[b]);
+
+b = 2;
+d = 0;
+c[b][d] = 9;
+println();
+printi(c[b][d]);

@@ -1,23 +1,23 @@
-var size;
-var i;
-var j;
-var t;
-var a[100];
-var inp;
+int size;
+int i;
+int j;
+int t;
+int a[10];
+int inp;
 
-def printarr(arr, size) {
+def printarr(i, a, size) void {
     i=0;
     while (i < size) {
-        printi(arr[i]);
+        printi(a[i]);
         println();
-        i = i+1;
+        i=i+1;
     }
     return;
 }
 
-a[0] = 0;
-a[1] = 0;
-a[2] = 0;
-a[3] = 0;
-a[4] = 0;
-printarr(a, 5);
+a[0] = 1;
+a[1] = 2;
+
+size = 5;
+i = 0;
+printarr(i, a, size);

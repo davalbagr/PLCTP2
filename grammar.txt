@@ -1,0 +1,101 @@
+Grammar
+
+S -> program
+
+program -> declist funlist codeblock
+
+codeblock -> stmlist
+		   | 	
+
+declist -> dec declist
+		 |
+
+dec -> dec_int
+	 | dec_arr
+	 | dec_mat
+
+dec_int -> INT ID SC
+
+dec_arr -> INT ID LBRACKET NUM RBRACKET SC
+
+dec_mat -> INT ID LBRACKET NUM RBRACKET LBRACKET NUM RBRACKET SC
+
+funlist -> fun funlist
+		 |
+
+fun -> INT ID LPAREN idlist RPAREN LCURLY stmlist RETURN exprl SC RCURLY 
+	 | VOID ID LPAREN idlist RPAREN LCURLY stmlist RETURN SC RCURLY 
+
+idlist -> ID cont
+		| 
+
+cont -> COMMA ID cont
+	  | 
+
+stmt -> PRINTI LPAREN exprl RPAREN SC
+	 -> PRINTLN LPAREN RPAREN SC
+	 -> PRINTS LPAREN STRING RPAREN SC
+	 -> WHILE LPAREN exprl RPAREN LCURLY block RCURLY
+	 -> ID ASSIGN exprl SC
+	 -> ID ASSIGN ID LPAREN idlist RPAREN SC
+	 -> ID LBRACKET exprl RBRACKET ASSIGN exprl SC
+	 -> ID LBRACKET exprl RBRACKET LBRACKET exprl RBRACKET ASSIGN exprl SC
+	 -> IF LPAREN exprl RPAREN block
+	 -> IF LPAREN exprl RPAREN block ELSE block
+	 -> INPUT LPAREN RPAREN SC
+	 -> exprl
+
+else -> ELSE codeblock
+	 -> 
+
+block -> LCURLY stmlist RCURLY
+	   | LCURLY stmt RCURLY	
+	   | stmt
+
+stmlist -> stmt stmlist
+		 | stmt 
+
+exprl -> expr oprl exprl
+       | expr
+
+expr -> expr opra term
+	  | term
+
+term -> term oprm factor
+	  | factor
+
+factor -> LPAREN exprl RPAREN
+		| ID
+		| NUM
+		| NOT exprl
+		| NEG exprl
+		| ID LBRACKET exprl RBRACKET
+		| ID LBRACKET exprl RBRACKET LBRACKET exprl RBRACKET
+		| ATOI LAPREN argatoi RPAREN
+		| ID LPAREN exprllist RPAREN
+		| TRUE
+		| FALSE
+
+exprllist -> exprl contexprllist
+		   | 
+
+contexprllist -> COMMA exprl contexprllist
+			   | 
+
+argatoi -> STRING
+		 | INPUT LPAREN RPAREN
+
+opra -> ADD
+	  | SUBT
+
+oprm -> MULT
+	  | DIV
+
+oprl -> EQ
+      | GEQ
+   	  | LEQ
+	  | LT
+	  | GT
+	  | NEQ
+	  | AND
+	  | OR

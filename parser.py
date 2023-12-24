@@ -1,353 +1,538 @@
-import ply.yacc as yacc
-import sys, tempfile
-from envManager import EnvManager
+import re
+import sys
+from ply import yacc
 from lexer import tokens
 
-output = tempfile.TemporaryFile()
-env = EnvManager()
-inside_fun = [False]
-has_return = [False]
-
-precedence = (
-    ('left', 'AND', 'OR', 'EQ', 'NEQ'),
-    ('left', 'GTE', 'LTE', '>', '<'),
-    ('left', '+', '-', '$'),
-    ('left', '*', '/', '%'),
-    ('left', 'UMINUS', '!'),
-    ('left', 'INDEX'),
-)
-
-
 def p_program(p):
-    '''program : declist start funlist entrypoint stmtlist '''
-    output.write(b'STOP')
-
-
-def p_start(p):
-    '''start :'''
-    output.write(b'JUMP entrypoint\n')
-
-
-def p_entrypoint(p):
-    '''entrypoint :'''
-    output.write(b'entrypoint:\n')
-
-
-def p_fun(p):
-    '''fun : DEF fun_name '(' idlist ')' block 
-           | DEF fun_name '(' ')' block '''
-    if env.fun_exists(p[2]):
-        print('cannot redeclare function')
-        parser.success = False
-        raise SyntaxError
-    output.write(b'RETURN\n')
-    env.add_fun(p[2])
-    env.pop_fun_scope()
-    inside_fun[0] = False
-
-
-def p_fun_name(p):
-    '''fun_name : ID '''
-    output.write(f'{p[1]}:\n'.encode('ascii'))
-    inside_fun[0] = True
-    p[0] = p[1]
-
-
-# - declaracoes
-
-def p_stmt_print(p):
-    '''stmt : PRINT '(' expr ')' ';' '''
-    output.write(b'WRITES\n')
-
-
-def p_stmt_println(p):
-    '''stmt : PRINTLN '(' ')' ';' '''
-    output.write(b'WRITELN\n')
-
-
-def p_stmt_while(p):
-    '''stmt : WHILE new_label expr jz block '''
-    output.write(f'JUMP lbl{p[2]}\n'.encode())
-    output.write(f'lbl{p[4]}:\n'.encode())
-    env.pop_jz_label()
-
-
-def p_stmt_ifelse(p):
-    '''stmt : IF expr jz block 
-            | IF expr jz block ELSE jmp jz_label block '''
-    if len(p) == 5:
-        output.write(f'lbl{env.get_label()}:\n'.encode('ascii'))
-    else:
-        output.write(f'lbl{p[6]}:\n'.encode())
-
-
-def p_jmp(p):
-    '''jmp :'''
-    env.new_label()
-    output.write(f'JUMP lbl{env.get_label()}\n'.encode('ascii'))
-    p[0] = env.get_label()
-
-
-def p_jz(p):
-    '''jz :'''
-    env.new_label()
-    output.write(f'JZ lbl{env.get_label()}\n'.encode('ascii'))
-    env.push_jz_label()
-    p[0] = env.get_label()
-
-
-def p_jz_label(p):
-    '''jz_label :'''
-    output.write(f'lbl{env.pop_jz_label()}:\n'.encode('ascii'))
-
-
-def p_new_label(p):
-    '''new_label :'''
-    env.new_label()
-    output.write(f'lbl{env.get_label()}:\n'.encode())
-    p[0] = env.get_label()
-
-
-def p_declare(p):
-    '''var_declare : VAR ID '=' expr ';' 
-                   | VAR ID ';' 
-                   | VAR ID '[' NUM ']' ';' 
-                   | VAR ID '[' NUM ']' '[' NUM ']' ';' '''
-    if env.var_exists(p[2]):
-        print(f'cannot redeclare identifier {p[2]}')
-        parser.success = False
-        raise SyntaxError
-    if len(p) == 7:
-        env.add_var(p[2], p[4])
-    elif len(p) > 7:
-        env.add_var(p[2], p[4] * p[7])
-    else:
-        env.add_var(p[2])
-    if len(p) == 4:
-        output.write(b'PUSHI 0\n')
-    if len(p) > 6:
-        env.set_array(p[2])
-        output.write(f'PUSHN {p[4]}\n'.encode('ascii'))
-        if len(p) > 7:
-            address = env.get_var(p[2])
-            for i in range(p[4]):
-                ad = env.add_var(None, p[7])
-                output.write(b'PUSHGP\n')
-                output.write(f'PUSHI {ad}\n'.encode('ascii'))
-                output.write(b'PADD\n')
-                output.write(f'STOREG {address + i}\n'.encode('ascii'))
-                output.write(f'PUSHN {p[7]}\n'.encode('ascii'))
-
-
-def p_stmt_assign(p):
-    '''stmt : ID '=' expr ';' '''
-    if not env.var_exists(p[1]):
-        print(f'variable {p[1]} has not been declared')
-        parser.success = False
-        raise SyntaxError
-    address = env.get_var(p[1])
-    output.write(f'STOREG {address}\n'.encode('ascii'))
-
-
-def p_stmt_assign_arr(p):
-    '''stmt : expr '[' expr ']' '=' expr ';' '''
-    output.write(b'STOREN\n')
-
-
-def p_stmt_return(p):
-    '''stmt : RETURN expr ';' 
-            | RETURN ';' '''
-    if not inside_fun[0]:
-        print('can only return inside of a function')
-        parser.success = False
-        raise SyntaxError
-    output.write(b'RETURN\n')
-
-
-def p_stmt_printi(p):
-    '''stmt : PRINTI '(' expr ')' ';' '''
-    output.write(b'WRITEI\n')
-
-
-def p_stmt_expr(p):
-    '''stmt : expr ';' '''
-
-
-# --------------------------
-
-# - expressoes
-
-def p_expr_input(p):
-    '''expr : INPUT '(' ')' '''
-    output.write(b'READ\n')
-
-
-def p_expr_str(p):
-    '''expr : STR '(' expr ')' '''
-    output.write(b'STRI\n')
-
-
-def p_expr_atoi(p):
-    '''expr : ATOI '(' expr ')' '''
-    output.write(b'ATOI\n')
-
-
-def p_expr_binop(p):
-    '''expr : expr '+' expr 
-            | expr '-' expr
-            | expr '*' expr 
-            | expr '/' expr
-            | expr '%' expr
-            | expr OR expr
-            | expr AND expr 
-            | expr '>' expr 
-            | expr '<' expr 
-            | expr GTE expr
-            | expr LTE expr 
-            | expr EQ expr
-            | expr NEQ expr
-            | expr '$' expr '''
-    ops = {'+': b'ADD\n',
-           '-': b'SUB\n',
-           '*': b'MUL\n',
-           '/': b'DIV\n',
-           '%': b'MOD\n',
-           '||': b'OR\n',
-           '&&': b'AND\n',
-           '>': b'SUP\n',
-           '<': b'INF\n',
-           '>=': b'SUPEQ\n',
-           '<=': b'INFEQ\n',
-           '==': b'EQUAL\n',
-           '$': b'CONCAT\n',
-           '!=': b'EQUAL\nNOT\n'}
-    output.write(ops[p[2]])
-    if p[2] == '/':
-        output.write(b'FTOI\n')
-
-
-def p_expr_not(p):
-    '''expr : '!' expr '''
-    output.write(b'NOT\n')
-
-
-def p_expr_neg(p):
-    '''expr : '-' expr %prec UMINUS '''
-    output.write(b'PUSHI -1\n')
-    output.write(b'MUL\n')
-
-
-def p_expr_id(p):
-    '''expr : ID '''
-    if not env.var_exists(p[1]):
-        print(f'Unknown identifier {p[1]}')
-        parser.success = False
-        raise SyntaxError
-    address = env.get_var(p[1])
-    if env.is_array(p[1]):
-        output.write(b'PUSHGP\n')
-        output.write(f'PUSHI {address}\n'.encode('ascii'))
-        output.write(b'PADD\n')
-    else:
-        output.write(f'PUSHG {address}\n'.encode('ascii'))
-
-
-def p_expr_ind(p):
-    '''expr : expr '[' expr ']' %prec INDEX '''
-    output.write(b'LOADN\n')
-
-
-def p_expr_string(p):
-    '''expr : STRING '''
-    output.write(f'PUSHS {p[1]}\n'.encode('ascii'))
-
-
-def p_expr_num(p):
-    '''expr : NUM '''
-    output.write(f'PUSHI {p[1]}\n'.encode('ascii'))
-
-
-def p_expr_true(p):
-    '''expr : TRUE '''
-    output.write(b'PUSHI 1\n')
-
-
-def p_expr_false(p):
-    '''expr : FALSE '''
-    output.write(b'PUSHI 0\n')
-
-
-def p_expr_fun(p):
-    '''expr : ID '(' exprlist ')' 
-            | ID '(' ')' '''
-    if not env.fun_exists(p[1]):
-        parser.success = False
-        print(f'Unknown function call {p[1]}')
-        raise SyntaxError
-    output.write(f'PUSHA {p[1]}\n'.encode('ascii'))
-    output.write(b'CALL\n')
-
-
-def p_expr(p):
-    '''expr : '(' expr ')' '''
-
-
-# ------------------------
-
-def p_declist(p):
-    '''declist : declist var_declare
-               |'''
-
-
-def p_funlist(p):
-    '''funlist : funlist fun 
-               |'''
-
-
-def p_stmtlist(p):
-    '''stmtlist : stmtlist stmt 
-                |'''
-
-
-def p_idlist(p):
-    '''idlist : idlist ',' ID
-              | ID '''
-    if len(p) == 2:
-        env.add_fun_var(p[1])
-    else:
-        env.add_fun_var(p[3])
-
-
-def p_exprlist(p):
-    '''exprlist : exprlist ',' expr
-                | expr '''
-
-
-def p_block(p):
-    '''block : '{' stmtlist '}' 
-             | stmt '''
-
+	'program : declist funlist codeblock'
+	if parser.success:
+		p[0] = p[1] + p[2] + p[3] + 'STOP'
+
+def p_codeblock1(p):
+	'codeblock : stmlist'
+	if parser.success:
+		p[0] = p[1]
+
+def p_codeblock2(p):
+	'codeblock : '
+	if parser.success:
+		p[0] = ''
+
+def p_declist_1(p):
+	'declist : dec declist'
+	if parser.success:
+		p[0] = p[1] + p[2]
+
+def p_declist_2(p):
+	'declist : '
+	if parser.success:
+		p[0] = ''
+
+def p_dec1(p):
+	'dec : dec_int'
+	if parser.success:
+		p[0] = p[1]
+
+def p_dec2(p):
+	'dec : dec_arr'
+	if parser.success:
+		p[0] = p[1]
+
+def p_dec3(p):
+	'dec : dec_mat'
+	if parser.success:
+		p[0] = p[1]
+
+def p_dec_int(p):
+	'dec_int : INT ID SC'
+	if parser.success:
+		name = p[2]
+		if name in parser.dict['funcs']:
+			if name == parser.currentfunc:
+				print(f'Error: Cannot redeclare identifier {name}')
+				parser.success = False
+		elif name in parser.dict['vars']:
+			if parser.dict['vars'][name]['scope'] == parser.currentfunc:
+				print(f'Error: Cannot redeclare identifier {name}')
+				parser.success = False
+	
+	if parser.success:
+		parser.dict['vars'].update({name: 
+			{'scope': parser.currentfunc,
+			 'size': 0,
+			 'count': parser.count
+			}
+		 }
+		)
+		parser.count += 1
+	p[0] = 'PUSHI 0\n'
+
+def p_def_arr(p):
+	'dec_arr : INT ID LBRACKET NUM RBRACKET SC'
+	if parser.success:
+		name = p[2]
+		size = p[4]
+		if name in parser.dict['funcs']: 
+			if name == parser.currentfunc:
+				print(f'Error: Cannot redeclare identifier {name}')
+				parser.success = False
+		elif name in parser.dict['vars']:
+			if parser.dict['vars'][name]['scope'] == parser.currentfunc:
+				print(f'Error: Cannot redeclare identifier {name}')
+				parser.success = False
+
+	if parser.success:
+		parser.dict['vars'].update({name:
+			{'scope': parser.currentfunc,
+			 'size': size,
+			 'count': parser.count
+			}
+		}
+		)
+		parser.count += size
+	p[0] = f'PUSHN {size}\n'
+
+def p_def_mat(p):
+	'dec_mat : INT ID LBRACKET NUM RBRACKET LBRACKET NUM RBRACKET SC'
+	if parser.success:
+		name = p[2]
+		row = p[4]
+		col = p[7]
+		if name in parser.dict['funcs']:
+			if name == parser.currentfunc:
+				print(f'Error: Cannot redeclare identifier {name}')
+				parser.success = False
+			elif name in parser.dict['vars']:
+				if parser.dict['vars'][name]['scope'] == parser.currentfunc:
+					print(f'Error: Cannot redeclare identifier {name}')
+	if parser.success:
+		parser.dict['vars'].update({name:
+			{'scope': parser.currentfunc,
+			 'size': row*col,
+			 'count': parser.count,
+			 'row':row,
+			 'col':col
+			}
+		}
+		)
+		parser.count += row*col
+	p[0] = f'PUSHN {row*col}\n'
+
+def p_funlist1(p):
+	'funlist : fun funlist'
+	if parser.success:
+		p[0] = p[1] + p[2]
+
+def p_funlist2(p):
+	'funlist : '
+	if parser.success:
+		p[0] = ''
+
+def p_fun1(p):
+	'fun : DEF ID LPAREN idlist RPAREN INT LCURLY stmlist RETURN exprl SC RCURLY'
+	name = p[2]
+	if parser.success:
+		if name in parser.dict['funcs']:
+			print(f'Error: Cannot redeclare function {name}')
+			parser.success = False
+	if parser.success:
+		lbl = parser.label
+		lbl_next = parser.label + 1
+		parser.label += 2
+		arguments = p[4].split('\n')
+		parser.dict['funcs'].update({name:
+			{'name': p[2],
+			 'arguments': arguments,
+			 'statements': p[8],
+			 'lbl': lbl 
+			}
+		}
+		)
+	if parser.success:
+		p[0] = f'JUMP lbl{lbl_next}\nlbl{lbl}:{p[8]}\n{p[10]}\nRETURN\nlbl{lbl_next}:\n'
+
+def p_fun2(p):
+	'fun : DEF ID LPAREN idlist RPAREN VOID LCURLY stmlist RETURN SC RCURLY'
+	name = p[2]
+	if parser.success:
+		if name in parser.dict['funcs']:
+			print(f'Error: Cannot redeclare function {name}')
+			parser.success = False
+	if parser.success:
+		lbl = parser.label
+		lbl_next = parser.label + 1
+		parser.label += 2
+		parser.dict['funcs'].update({name:
+			{'name': p[2],
+			 'arguments': p[4],
+			 'statements': p[8],
+			 'lbl': lbl 
+			}
+		}
+		)
+		p[0] = f'JUMP lbl{lbl_next}\nlbl{lbl}:{p[8]}\nRETURN\nlbl{lbl_next}:\n'
+
+def p_idlist1(p):
+	'idlist : ID cont'
+	if parser.success:
+		p[0] = p[1] + '\n' + p[2]
+
+def p_idlist2(p):
+	'idlist : '
+	if parser.success:
+		p[0] = ''
+
+def p_cont1(p):
+	'cont : COMMA ID cont'
+	if parser.success:
+		p[0] = p[2] + p[3]
+
+def p_cont2(p):
+	'cont : '
+	if parser.success:
+		p[0] = ''
+
+def p_stmlist1(p):
+	'stmlist : stmt stmlist'
+	if parser.success:
+		p[0] = p[1] + p[2]
+
+def p_stmlist2(p):
+	'stmlist : stmt'
+	if parser.success:
+		p[0] = p[1]
+
+def p_stmt1(p):
+	'stmt : PRINTI LPAREN exprl RPAREN SC'
+	if parser.success:
+		p[0] = p[3] + 'WRITEI\n'
+
+def p_stmt2(p):
+	'stmt : PRINTLN LPAREN RPAREN SC'
+	if parser.success:
+		p[0] = 'WRITELN\n'
+
+def p_stmt3(p):
+	'stmt : PRINTS LPAREN STRING RPAREN SC'
+	if parser.success:
+		p[0] = f'PUSHS {p[3]}\nWRITES\n'
+
+def p_stmt4(p):
+	'stmt : WHILE LPAREN exprl RPAREN block'
+	if parser.success:
+		lbl_ini = parser.label
+		lbl_end = parser.label + 1
+		parser.label += 2
+		p[0] = f'lbl{lbl_ini}:\n{p[3]} JZ lbl{lbl_end}\n{p[5]} JUMP lbl{lbl_ini}\nlbl{lbl_end}:\n'
+
+def p_stmt5(p):
+	'stmt : ID ASSIGN exprl SC'
+	if parser.success:
+		name = p[1]
+		if name in parser.dict['vars']:
+			address = parser.dict['vars'][name]['count']
+		else:
+			print('Error: Variable not declared.')
+			parser.success = False
+	if parser.success:
+		p[0] = f'{p[3]}\nSTOREG {address}\n'
+
+def p_stmt6(p):
+	'stmt : ID LBRACKET exprl RBRACKET ASSIGN exprl SC'
+	if parser.success:
+		name = p[1]
+		if name in parser.dict['vars']:
+			address = parser.dict['vars'][name]['count']
+		else:
+			print('Error: Array not declared.')
+			parser.success = False
+	if parser.success:
+		p[0] = f'PUSHGP\nPUSHI {address}\nPADD\n{p[3]}\n{p[6]}\nSTOREN\n'
+
+def p_stmt7(p):
+	'stmt : ID LBRACKET exprl RBRACKET LBRACKET exprl RBRACKET ASSIGN exprl SC'
+	if parser.success:
+		name = p[1]
+		row = p[3]
+		col = p[6]
+		if name in parser.dict['vars']:
+			address = parser.dict['vars'][name]['count']
+			tot_col = parser.dict['vars'][name]['col']
+		else:
+			print('Error: Matrix not declared.')
+			parser.success = False
+		if parser.success:
+			p[0] = f'PUSHGP\nPUSHI {address}\n{row}\nPUSHI {tot_col}\nMUL\nADD\n\nPADD\n{col}\n{p[9]}\nSTOREN\n'
+
+def p_stmt8(p):
+	'stmt : IF LPAREN exprl RPAREN block ELSE block'
+	if parser.success:
+		lbl_else = parser.label
+		lbl_end = parser.label + 1
+		parser.label += 2
+		p[0] = f'{p[3]}JZ lbl{lbl_else}\n{p[5]}JUMP lbl{lbl_end}\nlbl{lbl_end}:\nlbl{lbl_else}: {p[7]}\n'
+
+def p_stmt9(p):
+	'stmt : IF LPAREN exprl RPAREN block'
+	if parser.success:
+		lbl_end = parser.label
+		parser.label += 1
+		p[0] = f'{p[3]}JZ lbl{lbl_end}\n{p[5]}lbl{lbl_end}:\n'
+
+def p_stmt10(p):
+	'stmt : INPUT LPAREN RPAREN SC'
+	p[0] = 'READ\n'
+
+def p_stmt11(p):
+	'stmt : exprl SC'
+	p[0] = f'{p[1]}'
+
+def p_block1(p):
+	'block : LCURLY stmlist RCURLY'
+	if parser.success:
+		p[0] = p[2]
+
+def p_block2(p):
+	'block : LCURLY stmt RCURLY'
+	if parser.success:
+		p[0] = p[2]
+
+def p_block3(p):
+	'block : stmt'
+	if parser.success:
+		p[0] = p[1]
+
+def p_exprl1(p):
+	'exprl : expr oprl exprl'
+	if parser.success:
+		p[0] = p[1] + p[3] + p[2]
+
+def p_exprl2(p):
+	'exprl : expr'
+	if parser.success:
+		p[0] = p[1]
+
+def p_expr1(p):
+	'expr : expr opra term'
+	if parser.success:
+		p[0] = p[1] + p[3] + p[2]
+
+def p_expr2(p):
+	'expr : term'
+	if parser.success:
+		p[0] = p[1]
+
+def p_term1(p):
+	'term : term oprm factor'
+	if parser.success:
+		p[0] = p[1] + p[3] + p[2]
+
+def p_term2(p):
+	'term : factor'
+	if parser.success:
+		p[0] = p[1]
+
+def p_factor1(p):
+	'factor : LPAREN expr RPAREN'
+	if parser.success:
+		p[0] = p[2]
+
+def p_factor2(p):
+	'factor : ID'
+	if parser.success:
+		name = p[1]
+		if name in parser.dict['vars']:
+			address = parser.dict['vars'][name]['count']
+		else:
+			print('Error: Variable not declared.')
+			parser.success = False
+	if parser.success:
+		p[0] = f'PUSHG {address}\n'
+
+def p_factor3(p):
+	'factor : NUM'
+	if parser.success:
+		p[0] = f'PUSHI {p[1]}\n'
+
+def p_factor4(p):
+	'factor : NOT exprl'
+	if parser.success:
+		p[0] = 'NOT\n' + p[2]
+
+def p_factor5(p):
+	'factor : NEG exprl'
+	if parser.success:
+		p[0] = 'PUSHI 0\n' + p[2] + 'SUB\n'
+
+def p_factor6(p):
+	'factor : ID LBRACKET exprl RBRACKET'
+	if parser.success:
+		name = p[1]
+		if name in parser.dict['vars']:
+			address = parser.dict['vars'][name]['count']
+		else:
+			print('Error: Array not declared.')
+			parser.success = False
+	if parser.success:
+		p[0] = f'PUSHGP\nPUSHI {address}\nPADD\n{p[3]}\nLOADN\n'
+
+def p_factor7(p):
+	'factor : ID LBRACKET exprl RBRACKET LBRACKET exprl RBRACKET'
+	if parser.success:
+		name = p[1]
+		row = p[3]
+		col = p[6]
+		if name in parser.dict['vars']:
+			address = parser.dict['vars'][name]['count']
+			tot_col = parser.dict['vars'][name]['col']
+		else:
+			print('Error: Matrix not defined.')
+			parser.success = False
+	if parser.success:
+		p[0] = f'PUSHGP\nPUSHI {address}\n{row}\nPUSHI {tot_col}\nMUL\nADD\n\nPADD\n{col}\nLOADN\n'
+
+def p_factor8(p):
+	'factor : ATOI LPAREN argatoi RPAREN'
+	if parser.success:
+		p[0] = f'{p[3]}\nATOI\n'
+
+def p_factor9(p):
+	'factor : ID LPAREN exprllist RPAREN'
+	if parser.success:
+		name = p[1]
+		args = p[3]
+		if name in parser.dict['funcs']:
+			lbl = parser.dict['funcs'][name]['lbl']
+		else:
+			print('Error: Function not declared.')
+			parser.success = False
+	if parser.success:
+		args = args.split('\n')
+		res_args = ''
+		for arg in args:
+			res_args += f'{arg}\n'
+		for arg in reversed(parser.dict['funcs'][name]['arguments']):
+			if arg not in ['', '\n']:
+				address = parser.dict['vars'][arg]['count']
+				res_args += f'STOREG {address}\n'
+	if parser.success:
+		if len(res_args) > 0:
+			p[0] = res_args + f'\nPUSHA lbl{lbl}\nCALL\n'
+		else:
+			p[0] = f'\nPUSHA lbl{lbl}\nCALL\n'
+
+def p_factor10(p):
+	'factor : TRUE'
+	p[0] = 'PUSHI 1\n'
+
+def p_factor11(p):
+	'factor : FALSE'
+	p[0] = 'PUSHI 0\n'
+
+def p_exprllist1(p):
+	'exprllist : exprl contexprllist'
+	p[0] = p[1] + p[2]
+
+def p_exprllist2(p):
+	'exprllist : '
+	p[0] = ''
+
+def p_contexprllist(p):
+	'contexprllist : COMMA exprl contexprllist'
+	p[0] = p[2] + p[3]
+
+def p_contexprllist2(p):
+	'contexprllist : '
+	p[0] = ''
+
+def p_argatoi1(p):
+	'argatoi : STRING'
+	if parser.success:
+		p[0] = f'PUSHS {p[1]}'
+
+def p_argatoi2(p):
+	'argatoi : INPUT LPAREN RPAREN'
+	if parser.success:
+		p[0] = f'READ'
+
+def p_opra1(p):
+	'opra : ADD'
+	if parser.success:
+		p[0] = 'ADD\n'
+
+def p_opra2(p):
+	'opra : SUBT'
+	if parser.success:
+		p[0] = 'SUB\n'
+
+def p_oprm1(p):
+	'oprm : MULT'
+	if parser.success:
+		p[0] = 'MUL\n'
+
+def p_oprm2(p):
+	'oprm : DIV'
+	if parser.success:
+		p[0] = 'DIV\n'
+
+def p_oprl1(p):
+	'oprl : EQ'
+	if parser.success:
+		p[0] = 'EQUAL\n'
+
+def p_oprl2(p):
+	'oprl : GEQ'
+	if parser.success:
+		p[0] = 'SUPEQ\n'
+
+def p_oprl3(p):
+	'oprl : LEQ'
+	if parser.success:
+		p[0] = 'INFEQ\n'
+
+def p_oprl4(p):
+	'oprl : LT'
+	if parser.success:
+		p[0] = 'INF\n'
+
+def p_oprl5(p):
+	'oprl : GT'
+	if parser.success:
+		p[0] = 'SUP\n'
+
+def p_oprl6(p):
+	'oprl : NEQ'
+	if parser.success:
+		p[0] = 'EQUAL\nNOT\n'
+
+def p_oprl7(p):
+	'oprl : AND'
+	if parser.success:
+		p[0] = 'AND\n'
+
+def p_oprl8(p):
+	'oprl : OR'
+	if parser.success:
+		p[0] = 'OR\n'
 
 def p_error(p):
-    parser.success = False
-    print(f'Syntax error at token {p.type} line {p.lineno}')
-
+	parser.success = False
+	print(f'Error: Error in line {parser.line}\n{p}')
 
 parser = yacc.yacc(start='program')
+parser.currentfunc = ''
+parser.count = 0
+parser.label = 0
+parser.line = 0
 
-# linha de comandos
+parser.dict = {
+	'vars': {},
+	'funcs': {}
+}
 
 if __name__ == '__main__':
-    file = sys.argv[1]
-    f = open(file, 'r+')
-    try:
-        parser.success = True
-        res = parser.parse(f.read())
-        if parser.success:
-            output.seek(0)
-            print(output.read().decode())
-    except Exception as e:
-        raise
-    output.flush()
-    output.close()
-    f.close()
+	file = sys.argv[1]
+	f = open(file, 'r+')
+	parser.success = True
+	res = parser.parse(f.read())
+	f.close()

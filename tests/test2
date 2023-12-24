@@ -1,8 +1,8 @@
-var i;
-var j;
-var s;
-var a;
-var b;
+int i;
+int j;
+int s;
+int a;
+int b;
 
 a = atoi(input());
 s = atoi(input());

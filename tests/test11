@@ -1,0 +1,14 @@
+int a;
+int b;
+int i;
+
+i = 0;
+a = 2;
+b = 3;
+
+while (a < 3*b){
+    i = i + 1;
+    a = a + b;
+}
+
+printi(a);

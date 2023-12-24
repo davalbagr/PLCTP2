@@ -1,17 +1,19 @@
-var L;
-var R;
-var M;
-var arr[100];
-var i;
-var sq;
-var t;
-var counts;
-var res[100];
-var ptr1;
-var sv;
-var size;
+int L;
+int R;
+int M;
+int arr[100];
+int i;
+int sq;
+int t;
+int counts;
+int res[100];
+int ptr1;
+int sv;
+int size;
+int x;
+int n;
 
-def sqrt(x) {
+def sqrt(x) int {
 	R = x + 1;
 
     while (L != R - 1)
@@ -27,7 +29,7 @@ def sqrt(x) {
     return L;
 }
 
-def sieve(n) {
+def sieve(n) int {
     arr[0] = 1;
     arr[1] = 1;
     i = 2;
