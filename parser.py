@@ -535,4 +535,5 @@ if __name__ == '__main__':
 	f = open(file, 'r+')
 	parser.success = True
 	res = parser.parse(f.read())
+	print(res)
 	f.close()
