@@ -23,8 +23,8 @@ dec_mat -> INT ID LBRACKET NUM RBRACKET LBRACKET NUM RBRACKET SC
 funlist -> fun funlist
 		 |
 
-fun -> INT ID LPAREN idlist RPAREN LCURLY stmlist RETURN exprl SC RCURLY 
-	 | VOID ID LPAREN idlist RPAREN LCURLY stmlist RETURN SC RCURLY 
+fun -> DEF ID LPAREN idlist RPAREN INT LCURLY stmlist RETURN exprl SC RCURLY 
+	 | DEF ID LPAREN idlist RPAREN VOID LCURLY stmlist RETURN SC RCURLY 
 
 idlist -> ID cont
 		| 
@@ -32,28 +32,25 @@ idlist -> ID cont
 cont -> COMMA ID cont
 	  | 
 
+stmlist -> stmt stmlist
+		 | stmt 
+
 stmt -> PRINTI LPAREN exprl RPAREN SC
 	 -> PRINTLN LPAREN RPAREN SC
 	 -> PRINTS LPAREN STRING RPAREN SC
-	 -> WHILE LPAREN exprl RPAREN LCURLY block RCURLY
+	 -> WHILE LPAREN exprl RPAREN block
 	 -> ID ASSIGN exprl SC
 	 -> ID ASSIGN ID LPAREN idlist RPAREN SC
 	 -> ID LBRACKET exprl RBRACKET ASSIGN exprl SC
 	 -> ID LBRACKET exprl RBRACKET LBRACKET exprl RBRACKET ASSIGN exprl SC
-	 -> IF LPAREN exprl RPAREN block
 	 -> IF LPAREN exprl RPAREN block ELSE block
+	 -> IF LPAREN exprl RPAREN block
 	 -> INPUT LPAREN RPAREN SC
-	 -> exprl
-
-else -> ELSE codeblock
-	 -> 
+	 -> exprl SC
 
 block -> LCURLY stmlist RCURLY
 	   | LCURLY stmt RCURLY	
 	   | stmt
-
-stmlist -> stmt stmlist
-		 | stmt 
 
 exprl -> expr oprl exprl
        | expr
