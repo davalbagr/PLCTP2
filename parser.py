@@ -149,7 +149,7 @@ def p_fun1(p):
 		}
 		)
 	if parser.success:
-		p[0] = f'JUMP lbl{lbl_next}\nlbl{lbl}:{p[8]}\n{p[10]}\nRETURN\nlbl{lbl_next}:\n'
+		p[0] = f'JUMP lbl{lbl_next}\nlbl{lbl}:\n{p[8]}{p[10]}RETURN\nlbl{lbl_next}:\n'
 
 def p_fun2(p):
 	'fun : DEF ID LPAREN idlist RPAREN VOID LCURLY stmlist RETURN SC RCURLY'
@@ -162,15 +162,16 @@ def p_fun2(p):
 		lbl = parser.label
 		lbl_next = parser.label + 1
 		parser.label += 2
+		arguments = p[4].split('\n')
 		parser.dict['funcs'].update({name:
 			{'name': p[2],
-			 'arguments': p[4],
+			 'arguments': arguments,
 			 'statements': p[8],
 			 'lbl': lbl 
 			}
 		}
 		)
-		p[0] = f'JUMP lbl{lbl_next}\nlbl{lbl}:{p[8]}\nRETURN\nlbl{lbl_next}:\n'
+		p[0] = f'JUMP lbl{lbl_next}\nlbl{lbl}:\n{p[8]}RETURN\nlbl{lbl_next}:\n'
 
 def p_idlist1(p):
 	'idlist : ID cont'
@@ -185,7 +186,7 @@ def p_idlist2(p):
 def p_cont1(p):
 	'cont : COMMA ID cont'
 	if parser.success:
-		p[0] = p[2] + p[3]
+		p[0] = p[2] + '\n' + p[3]
 
 def p_cont2(p):
 	'cont : '
@@ -223,7 +224,7 @@ def p_stmt4(p):
 		lbl_ini = parser.label
 		lbl_end = parser.label + 1
 		parser.label += 2
-		p[0] = f'lbl{lbl_ini}:\n{p[3]} JZ lbl{lbl_end}\n{p[5]} JUMP lbl{lbl_ini}\nlbl{lbl_end}:\n'
+		p[0] = f'lbl{lbl_ini}:\n{p[3]}JZ lbl{lbl_end}\n{p[5]}JUMP lbl{lbl_ini}\nlbl{lbl_end}:\n'
 
 def p_stmt5(p):
 	'stmt : ID ASSIGN exprl SC'
@@ -235,7 +236,7 @@ def p_stmt5(p):
 			print('Error: Variable not declared.')
 			parser.success = False
 	if parser.success:
-		p[0] = f'{p[3]}\nSTOREG {address}\n'
+		p[0] = f'{p[3]}STOREG {address}\n'
 
 def p_stmt6(p):
 	'stmt : ID LBRACKET exprl RBRACKET ASSIGN exprl SC'
@@ -247,7 +248,7 @@ def p_stmt6(p):
 			print('Error: Array not declared.')
 			parser.success = False
 	if parser.success:
-		p[0] = f'PUSHGP\nPUSHI {address}\nPADD\n{p[3]}\n{p[6]}\nSTOREN\n'
+		p[0] = f'PUSHGP\nPUSHI {address}\nPADD\n{p[3]}{p[6]}STOREN\n'
 
 def p_stmt7(p):
 	'stmt : ID LBRACKET exprl RBRACKET LBRACKET exprl RBRACKET ASSIGN exprl SC'
@@ -262,7 +263,7 @@ def p_stmt7(p):
 			print('Error: Matrix not declared.')
 			parser.success = False
 		if parser.success:
-			p[0] = f'PUSHGP\nPUSHI {address}\n{row}\nPUSHI {tot_col}\nMUL\nADD\n\nPADD\n{col}\n{p[9]}\nSTOREN\n'
+			p[0] = f'PUSHGP\nPUSHI {address}\n{row}PUSHI {tot_col}\nMUL\nADD\nPADD\n{col}{p[9]}STOREN\n'
 
 def p_stmt8(p):
 	'stmt : IF LPAREN exprl RPAREN block ELSE block'
@@ -374,7 +375,7 @@ def p_factor6(p):
 			print('Error: Array not declared.')
 			parser.success = False
 	if parser.success:
-		p[0] = f'PUSHGP\nPUSHI {address}\nPADD\n{p[3]}\nLOADN\n'
+		p[0] = f'PUSHGP\nPUSHI {address}\nPADD\n{p[3]}LOADN\n'
 
 def p_factor7(p):
 	'factor : ID LBRACKET exprl RBRACKET LBRACKET exprl RBRACKET'
@@ -389,7 +390,7 @@ def p_factor7(p):
 			print('Error: Matrix not defined.')
 			parser.success = False
 	if parser.success:
-		p[0] = f'PUSHGP\nPUSHI {address}\n{row}\nPUSHI {tot_col}\nMUL\nADD\n\nPADD\n{col}\nLOADN\n'
+		p[0] = f'PUSHGP\nPUSHI {address}\n{row}PUSHI {tot_col}\nMUL\nADD\nPADD\n{col}LOADN\n'
 
 def p_factor8(p):
 	'factor : ATOI LPAREN argatoi RPAREN'
@@ -411,13 +412,14 @@ def p_factor9(p):
 		res_args = ''
 		for arg in args:
 			res_args += f'{arg}\n'
+		res_args = res_args[:-1]
 		for arg in reversed(parser.dict['funcs'][name]['arguments']):
 			if arg not in ['', '\n']:
 				address = parser.dict['vars'][arg]['count']
 				res_args += f'STOREG {address}\n'
 	if parser.success:
 		if len(res_args) > 0:
-			p[0] = res_args + f'\nPUSHA lbl{lbl}\nCALL\n'
+			p[0] = res_args + f'PUSHA lbl{lbl}\nCALL\n'
 		else:
 			p[0] = f'\nPUSHA lbl{lbl}\nCALL\n'
 

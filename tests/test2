@@ -12,7 +12,7 @@ while (i < a) {
     while (j < a) {
         if (i+j == s) {
             printi(i);
-            print(" ");
+            prints(" ");
             printi(j);
             println();
         }

@@ -11,7 +11,7 @@ def soma (c, d) int {
 a1 = 2;
 a2 = 3;
 
-d = soma(a1, a2);
+soma(a1, a2);
 printi(d);
 println();
 prints("ahjads");
