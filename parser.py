@@ -357,6 +357,9 @@ def p_expr_fun(p):
         raise SyntaxError
     output.write(f'PUSHA {p[1]}\n'.encode('ascii'))
     output.write(b'CALL\n')
+    for _ in range(len(p[3])):
+        output.write(b'SWAP\n')
+        output.write(b'POP 1\n')
     p[0] = env.get_fun_return(p[1])
 
 def p_expr(p):
