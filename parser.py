@@ -502,6 +502,10 @@ parser = yacc.yacc(start='program')
 
 if __name__ == '__main__':
     file = sys.argv[1]
+    if file == '-g':
+        for i in parser.productions:
+            print(i)
+        sys.exit(0)
     f = open(file, 'r+')
     try:
         parser.success = True
