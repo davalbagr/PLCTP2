@@ -335,13 +335,17 @@ def p_expr_not(p):
 
 def p_expr_neg(p):
     '''expr : '-' expr %prec UMINUS '''
-    if p[2] != int:
+    if p[2] not in [int, float]:
         print('Type mismatch line:', p.lineno(1))
         parser.success = False
         raise SyntaxError
-    output.write(b'PUSHI -1\n')
-    output.write(b'MUL\n')
-    p[0] = int
+    if p[2] == float:
+        output.write(b'PUSHF -1.0\n')
+        output.write(b'FMUL\n')
+    else:
+        output.write(b'PUSHI -1\n')
+        output.write(b'MUL\n')
+    p[0] = p[2]
 
 
 def p_expr_id(p):
