@@ -271,7 +271,7 @@ def p_stmt8(p):
 		lbl_else = parser.label
 		lbl_end = parser.label + 1
 		parser.label += 2
-		p[0] = f'{p[3]}JZ lbl{lbl_else}\n{p[5]}JUMP lbl{lbl_end}\nlbl{lbl_end}:\nlbl{lbl_else}: {p[7]}\n'
+		p[0] = f'{p[3]}JZ lbl{lbl_else}\n{p[5]}JUMP lbl{lbl_end}\nlbl{lbl_else}: {p[7]}lbl{lbl_end}:\n'
 
 def p_stmt9(p):
 	'stmt : IF LPAREN exprl RPAREN block'

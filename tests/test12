@@ -6,13 +6,13 @@ def teste(a) int {
     return a;
 }
 
-a = 2;
+a = 5;
 b = 3;
 
 if (a > b) {
     a = b;
 } else {
-    b = a;
+    b = 1;
 }
 
 printi(teste(a));
