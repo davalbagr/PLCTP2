@@ -65,17 +65,22 @@ def p_ftype(p):
 
 def p_stmt_print(p):
     '''stmt : PRINT '(' expr ')' ';' '''
-    if p[3] == int:
-        output.write(b'WRITEI\n')
-    elif p[3] == str:
-        output.write(b'WRITES\n')
-    else:
+    d = {int: b'WRITEI\n', str: b'WRITES\n', float: b'WRITEF\n'}
+    if p[3] not in d:
         print('cannot print value')
         raise SyntaxError
+    output.write(d[p[3]])
 
 
 def p_stmt_println(p):
-    '''stmt : PRINTLN '(' ')' ';' '''
+    '''stmt : PRINTLN '(' ')' ';' 
+            | PRINTLN '(' expr ')' ';' '''
+    if len(p) > 5:
+        d = {int: b'WRITEI\n', str: b'WRITES\n', float: b'WRITEF\n'}
+        if p[3] not in d:
+            print('cannot print value')
+            raise SyntaxError
+        output.write(d[p[3]])
     output.write(b'WRITELN\n')
 
 
@@ -169,7 +174,10 @@ def p_declare_var(p):
             parser.success = False
             raise SyntaxError
     else:
-        output.write(b'PUSHI 0\n')
+        if p[3] == float:
+            output.write(b'PUSHF 0.0')
+        else:
+            output.write(b'PUSHI 0\n')
     env.add_var(p[2], p[3])
 
 
@@ -230,20 +238,36 @@ def p_expr_input(p):
 
 
 def p_expr_str(p):
-    '''expr : STR '(' expr ')' '''
-    output.write(b'STRI\n')
+    '''expr : STRINGTYPE '(' expr ')' '''
+    d = {str: b'', int: b'STRI\n', float: b'STRF\n'}
+    if p[3] not in d:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
+    output.write(d[p[3]])
     p[0] = str
 
 
 def p_expr_atoi(p):
-    '''expr : ATOI '(' expr ')' '''
-    if p[3] == str:
-        output.write(b'ATOI\n')
-    else:
+    '''expr : INTTYPE '(' expr ')' '''
+    d = {str: b'ATOI\n', float: b'FTOI\n', int: b''}
+    if p[3] not in d:
         print('Type mismatch line:', p.lineno(1))
         parser.success = False
         raise SyntaxError
+    output.write(d[p[3]])
     p[0] = int
+
+def p_expr_ftoi(p):
+    '''expr : FLOATTYPE '(' expr ')' '''
+    d = {str: b'ATOF\n', int: b'ITOF\n', float: b''}
+    if p[3] not in d:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
+    output.write(d[p[3]])
+    p[0] = float
+
 
 
 def p_expr_binop(p):
@@ -251,44 +275,54 @@ def p_expr_binop(p):
             | expr '-' expr
             | expr '*' expr 
             | expr '/' expr
-            | expr '%' expr
-            | expr OR expr
-            | expr AND expr 
-            | expr '>' expr 
+            | expr '>' expr
             | expr '<' expr 
             | expr GTE expr
             | expr LTE expr 
             | expr EQ expr
-            | expr NEQ expr
-            | expr '$' expr '''
+            | expr NEQ expr '''
     ops = {'+': b'ADD\n',
            '-': b'SUB\n',
            '*': b'MUL\n',
            '/': b'DIV\n',
-           '%': b'MOD\n',
-           '||': b'OR\n',
-           '&&': b'AND\n',
            '>': b'SUP\n',
            '<': b'INF\n',
            '>=': b'SUPEQ\n',
            '<=': b'INFEQ\n',
            '==': b'EQUAL\n',
-           '$': b'CONCAT\n',
            '!=': b'EQUAL\nNOT\n'}
-    if p[2] == '$' and (p[1] != str or p[3] != str):
+    if p[1] != p[3] or p[1] not in [float, int]:
         print('Type mismatch line:', p.lineno(1))
         parser.success = False
         raise SyntaxError
+    op = ops[p[2]]
+    if p[1] == float and p[2] not in ['!=', '==']:
+        op = ('F'+op.decode('ascii')).encode('ascii')
+    output.write(op)
+    if p[2] == '/' and p[1] == int:
+        output.write(b'FTOI\n')
+    p[0] = p[1]
+
+def p_expr_binop_int(p):
+    '''expr : expr '%' expr
+            | expr AND expr
+            | expr OR expr'''
     if p[1] != int or p[3] != int:
         print('Type mismatch line:', p.lineno(1))
         parser.success = False
         raise SyntaxError
+    ops = {'||': b'OR\n', '&&': b'AND\n', '%': b'MOD\n'}
     output.write(ops[p[2]])
-    if p[2] == '/':
-        output.write(b'FTOI\n')
-    p[0] = int if p[2] != '$' else str
+    p[0] = int
 
-
+def p_expr_concat(p):
+    '''expr : expr '$' expr'''
+    if p[1] != str or p[3] != str:
+        print('Type mismatch line:', p.lineno(1))
+        parser.success = False
+        raise SyntaxError
+    output.write(b'CONCAT\n')
+    p[0] = str
 def p_expr_not(p):
     '''expr : '!' expr '''
     if p[2] != int:
@@ -350,6 +384,11 @@ def p_expr_num(p):
     output.write(f'PUSHI {p[1]}\n'.encode('ascii'))
     p[0] = int
 
+def p_expr_float(p):
+    '''expr : FLOAT'''
+    output.write(f'PUSHF {p[1]}\n'.encode('ascii'))
+    p[0] = float
+
 
 def p_expr_fun(p):
     '''expr : ID '(' fcall ')' '''
@@ -385,10 +424,14 @@ def p_type_int(p):
 def p_type_void(p):
     '''type : VOIDTYPE'''
 
+def p_type_float(p):
+    '''type : FLOATTYPE'''
+    p[0] = float
+
 
 def p_type_arr(p):
-    '''type :  '[' type ']' '''
-    p[0] = [p[2]]
+    '''type :  type '[' ']'  '''
+    p[0] = [p[1]]
 
 
 def p_declist(p):

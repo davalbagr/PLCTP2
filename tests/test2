@@ -4,8 +4,8 @@ var s int;
 var a int;
 var b int;
 
-a = atoi(input());
-s = atoi(input());
+a = int(input());
+s = int(input());
 
 while (i < a) {
     j = 0;

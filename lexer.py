@@ -9,14 +9,13 @@ reserved = {
     'else': 'ELSE',
     'return': 'RETURN',
     'input': 'INPUT',
-    'str': 'STR',
     'def': 'DEF',
     'var': 'VAR',
-    'atoi': 'ATOI',
     'println': 'PRINTLN',
     'string': 'STRINGTYPE',
     'int': 'INTTYPE',
-    'void': 'VOIDTYPE'
+    'void': 'VOIDTYPE',
+    'float': 'FLOATTYPE'
 }
 tokens = (
              'ID',
@@ -28,6 +27,7 @@ tokens = (
              'LTE',
              'GTE',
              'STRING',
+             'FLOAT',
          ) + tuple(reserved.values())
 
 literals = ('+', '-', '*', '/', '!', '<', '>', '(', ')', '=', '%', '{', '}', ';', ',', '[', ']', '$')
@@ -38,20 +38,25 @@ def t_ID(t):
     t.type = reserved.get(t.value, 'ID')
     return t
 
+def t_FLOAT(t):
+    r'\d+\.\d+'
+    t.value = float(t.value)
+    return t
 
 def t_NUM(t):
     r'\d+'
     t.value = int(t.value)
     return t
 
-
 def t_COMMENT(t):
     r'//.*'
     pass
 
+
 def t_NEWLINE(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
+
 
 t_STRING = r'\"[^\"]*\"'
 t_EQ = r'=='

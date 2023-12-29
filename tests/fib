@@ -14,4 +14,4 @@ def fib(n int) int {
    return p1;
 }
 
-print(fib(atoi(input())));
+print(fib(int(input())));

@@ -19,5 +19,5 @@ def sqrt(x int) int {
     return L;
 }
 
-res = sqrt(atoi(input()));
+res = sqrt(int(input()));
 print(res);

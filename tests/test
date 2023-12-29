@@ -7,9 +7,9 @@ var size int;
 
    
 
-size = atoi(input());
+size = int(input());
 while (j < size) {
-    a[j] = atoi(input());
+    a[j] = int(input());
     j = j + 1;
 }
 

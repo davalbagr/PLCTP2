@@ -2,7 +2,7 @@ var size int;
 var i int;
 var a[5] int;
 
-def printarr(arr [int], size int) void {
+def printarr(arr int[], size int) void {
     i=0;
     while (i < size) {
         print(arr[i]);
