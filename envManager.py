@@ -9,6 +9,7 @@ class EnvManager():
         self.jz_labels = []
         self.arrays = set()
         self.fun_return = {}
+        self.arg_length = None
 
     def add_var(self, name, typ, offset=1):
         if name is not None:
@@ -21,7 +22,7 @@ class EnvManager():
         if name not in self.fun_scope:
             return self.vars[name]
         else:
-            return self.fun_scope[name]
+            return self.fun_scope[name][0]-self.arg_length, self.fun_scope[name][1]
 
     def var_exists(self, name):
         return name in self.vars or name in self.fun_scope
@@ -37,12 +38,13 @@ class EnvManager():
         self.fun_return[name] = rtrn
 
     def add_fun_var(self, name, typ):
-        self.fun_scope[name] = (self.count+self.fun_scope_counter, typ)
+        self.fun_scope[name] = (self.fun_scope_counter, typ)
         self.fun_scope_counter += 1
-        
+
     def pop_fun_scope(self):
         self.fun_scope.clear()
         self.fun_scope_counter = 0
+        self.arg_length = None
 
     def new_label(self):
         self.label += 1
@@ -61,6 +63,10 @@ class EnvManager():
 
     def get_fun_return(self, name):
         return self.fun_return[name]
+
+    def set_fun_arg_length(self, size):
+        self.arg_length = size
+
 
 
     

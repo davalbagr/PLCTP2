@@ -184,7 +184,10 @@ def p_stmt_assign(p):
         print('Type mismatch line:', p.lineno(1))
         parser.success = False
         raise SyntaxError
-    output.write(f'STOREG {address}\n'.encode('ascii'))
+    if address < 0:
+        output.write(f'STOREL {address}\n'.encode('ascii'))
+    else:
+        output.write(f'STOREG {address}\n'.encode('ascii'))
 
 
 def p_stmt_assign_arr(p):
@@ -319,7 +322,10 @@ def p_expr_id(p):
         output.write(f'PUSHI {address}\n'.encode('ascii'))
         output.write(b'PADD\n')
     else:
-        output.write(f'PUSHG {address}\n'.encode('ascii'))
+        if address < 0:
+            output.write(f'PUSHL {address}\n'.encode('ascii'))
+        else:
+            output.write(f'PUSHG {address}\n'.encode('ascii'))
     p[0] = typ
 
 
@@ -357,9 +363,6 @@ def p_expr_fun(p):
         raise SyntaxError
     output.write(f'PUSHA {p[1]}\n'.encode('ascii'))
     output.write(b'CALL\n')
-    for _ in range(len(p[3])):
-        output.write(b'SWAP\n')
-        output.write(b'POP 1\n')
     p[0] = env.get_fun_return(p[1])
 
 def p_expr(p):
@@ -407,6 +410,7 @@ def p_funargs(p):
     ''' funargs : idlist
                  |'''
     p[0] = [] if len(p) == 1 else p[1]
+    env.set_fun_arg_length(len(p[0]))
 
 
 def p_idlist(p):
