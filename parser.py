@@ -358,7 +358,7 @@ def p_factor3(p):
 def p_factor4(p):
 	'factor : NOT exprl'
 	if parser.success:
-		p[0] = 'NOT\n' + p[2]
+		p[0] = p[2] + 'NOT\n'
 
 def p_factor5(p):
 	'factor : NEG exprl'
@@ -475,7 +475,7 @@ def p_oprm1(p):
 def p_oprm2(p):
 	'oprm : DIV'
 	if parser.success:
-		p[0] = 'DIV\n'
+		p[0] = 'DIV\nFTOI\n'
 
 def p_oprl1(p):
 	'oprl : EQ'
