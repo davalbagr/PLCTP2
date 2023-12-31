@@ -48,18 +48,14 @@ def p_dec_int(p):
 	if parser.success:
 		name = p[2]
 		if name in parser.dict['funcs']:
-			if name == parser.currentfunc:
-				print(f'Error: Cannot redeclare identifier {name}')
-				parser.success = False
+			print(f'Error: Identifier already declared as function {name}.')
+			parser.success = False
 		elif name in parser.dict['vars']:
-			if parser.dict['vars'][name]['scope'] == parser.currentfunc:
-				print(f'Error: Cannot redeclare identifier {name}')
-				parser.success = False
-	
+			print(f'Error: Cannot redeclare identifier {name}.')
+			parser.success = False	
 	if parser.success:
 		parser.dict['vars'].update({name: 
-			{'scope': parser.currentfunc,
-			 'size': 0,
+			{'size': 0,
 			 'count': parser.count
 			}
 		 }
@@ -73,18 +69,14 @@ def p_def_arr(p):
 		name = p[2]
 		size = p[4]
 		if name in parser.dict['funcs']: 
-			if name == parser.currentfunc:
-				print(f'Error: Cannot redeclare identifier {name}')
-				parser.success = False
+			print(f'Error: Identifier already declared as function {name}.')
+			parser.success = False
 		elif name in parser.dict['vars']:
-			if parser.dict['vars'][name]['scope'] == parser.currentfunc:
-				print(f'Error: Cannot redeclare identifier {name}')
-				parser.success = False
-
+			print(f'Error: Cannot redeclare identifier {name}')
+			parser.success = False
 	if parser.success:
 		parser.dict['vars'].update({name:
-			{'scope': parser.currentfunc,
-			 'size': size,
+			{'size': size,
 			 'count': parser.count
 			}
 		}
@@ -99,16 +91,13 @@ def p_def_mat(p):
 		row = p[4]
 		col = p[7]
 		if name in parser.dict['funcs']:
-			if name == parser.currentfunc:
-				print(f'Error: Cannot redeclare identifier {name}')
-				parser.success = False
-			elif name in parser.dict['vars']:
-				if parser.dict['vars'][name]['scope'] == parser.currentfunc:
-					print(f'Error: Cannot redeclare identifier {name}')
+			print(f'Error: Identifier already declared as function {name}.')
+			parser.success = False
+		elif name in parser.dict['vars']:
+			print(f'Error: Cannot redeclare identifier {name}.')
 	if parser.success:
 		parser.dict['vars'].update({name:
-			{'scope': parser.currentfunc,
-			 'size': row*col,
+			{'size': row*col,
 			 'count': parser.count,
 			 'row':row,
 			 'col':col
@@ -271,7 +260,7 @@ def p_stmt8(p):
 		lbl_else = parser.label
 		lbl_end = parser.label + 1
 		parser.label += 2
-		p[0] = f'{p[3]}JZ lbl{lbl_else}\n{p[5]}JUMP lbl{lbl_end}\nlbl{lbl_else}: {p[7]}lbl{lbl_end}:\n'
+		p[0] = f'{p[3]}JZ lbl{lbl_else}\n{p[5]}JUMP lbl{lbl_end}\nlbl{lbl_else}:\n{p[7]}lbl{lbl_end}:\n'
 
 def p_stmt9(p):
 	'stmt : IF LPAREN exprl RPAREN block'
@@ -522,7 +511,6 @@ def p_error(p):
 	print(f'Error: Error in line {parser.line}\n{p}')
 
 parser = yacc.yacc(start='program')
-parser.currentfunc = ''
 parser.count = 0
 parser.label = 0
 parser.line = 0
