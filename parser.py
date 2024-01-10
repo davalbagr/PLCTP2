@@ -51,7 +51,7 @@ def p_dec_int(p):
 			print(f'Error: Identifier already declared as function {name}.')
 			parser.success = False
 		elif name in parser.dict['vars']:
-			print(f'Error: Cannot redeclare identifier {name}.')
+			print(f'Error: Identifier already declared as variable {name}')
 			parser.success = False	
 	if parser.success:
 		parser.dict['vars'].update({name: 
@@ -72,7 +72,7 @@ def p_def_arr(p):
 			print(f'Error: Identifier already declared as function {name}.')
 			parser.success = False
 		elif name in parser.dict['vars']:
-			print(f'Error: Cannot redeclare identifier {name}')
+			print(f'Error: Identifier already declared as variable {name}')
 			parser.success = False
 	if parser.success:
 		parser.dict['vars'].update({name:
@@ -94,7 +94,8 @@ def p_def_mat(p):
 			print(f'Error: Identifier already declared as function {name}.')
 			parser.success = False
 		elif name in parser.dict['vars']:
-			print(f'Error: Cannot redeclare identifier {name}.')
+			print(f'Error: Identifier already declared as variable {name}')
+			parser.success = False
 	if parser.success:
 		parser.dict['vars'].update({name:
 			{'size': row*col,
@@ -124,6 +125,9 @@ def p_fun1(p):
 		if name in parser.dict['funcs']:
 			print(f'Error: Cannot redeclare function {name}')
 			parser.success = False
+		if name in parser.dict['vars']:
+			print(f'Error: Identifier already declared as variable {name}')
+			parser.success = False
 	if parser.success:
 		lbl = parser.label
 		lbl_next = parser.label + 1
@@ -146,6 +150,9 @@ def p_fun2(p):
 	if parser.success:
 		if name in parser.dict['funcs']:
 			print(f'Error: Cannot redeclare function {name}')
+			parser.success = False
+		if name in parser.dict['vars']:
+			print(f'Error: Identifier already declared as variable {name}')
 			parser.success = False
 	if parser.success:
 		lbl = parser.label
@@ -221,6 +228,9 @@ def p_stmt5(p):
 		name = p[1]
 		if name in parser.dict['vars']:
 			address = parser.dict['vars'][name]['count']
+		elif name in parser.dict['funcs']:
+			print(f'Error: Identifier is function not variable {name}')
+			parser.success = False
 		else:
 			print('Error: Variable not declared.')
 			parser.success = False
@@ -233,6 +243,9 @@ def p_stmt6(p):
 		name = p[1]
 		if name in parser.dict['vars']:
 			address = parser.dict['vars'][name]['count']
+		elif name in parser.dict['funcs']:
+			print(f'Error: Identifier is function not array {name}')
+			parser.success = False
 		else:
 			print('Error: Array not declared.')
 			parser.success = False
@@ -248,6 +261,9 @@ def p_stmt7(p):
 		if name in parser.dict['vars']:
 			address = parser.dict['vars'][name]['count']
 			tot_col = parser.dict['vars'][name]['col']
+		elif name in parser.dict['funcs']:
+			print(f'Error: Identifier is function not matrix {name}')
+			parser.success = False
 		else:
 			print('Error: Matrix not declared.')
 			parser.success = False
@@ -333,6 +349,9 @@ def p_factor2(p):
 		name = p[1]
 		if name in parser.dict['vars']:
 			address = parser.dict['vars'][name]['count']
+		elif name in parser.dict['funcs']:
+			print(f'Error: Identifier is function not variable {name}')
+			parser.success = False
 		else:
 			print('Error: Variable not declared.')
 			parser.success = False
@@ -360,6 +379,9 @@ def p_factor6(p):
 		name = p[1]
 		if name in parser.dict['vars']:
 			address = parser.dict['vars'][name]['count']
+		elif name in parser.dict['funcs']:
+			print(f'Error: Identifier is function not array {name}')
+			parser.success = False
 		else:
 			print('Error: Array not declared.')
 			parser.success = False
@@ -375,6 +397,9 @@ def p_factor7(p):
 		if name in parser.dict['vars']:
 			address = parser.dict['vars'][name]['count']
 			tot_col = parser.dict['vars'][name]['col']
+		elif name in parser.dict['funcs']:
+			print(f'Error: Identifier is function not matrix {name}')
+			parser.success = False
 		else:
 			print('Error: Matrix not defined.')
 			parser.success = False
@@ -393,6 +418,9 @@ def p_factor9(p):
 		args = p[3]
 		if name in parser.dict['funcs']:
 			lbl = parser.dict['funcs'][name]['lbl']
+		elif name in parser.dict['vars']:
+			print(f'Error: Identifier is variable not function {name}')
+			parser.success = False
 		else:
 			print('Error: Function not declared.')
 			parser.success = False
