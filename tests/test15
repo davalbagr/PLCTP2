@@ -1,0 +1,52 @@
+int mat[2][2];
+int coe;
+int row;
+int col;
+int i;
+int j;
+int rowlen;
+int collen;
+
+def mult_matrix (mat, coe, i, j, rowlen, collen) void {
+    while (i < rowlen) {
+        while (j < collen) {
+            mat[i][j] = mat[i][j] * coe;
+            j = j+1;
+        }
+        j = 0;
+        i = i+1;
+    }
+    return;
+}
+
+def print_matrix (mat, coe, i, j, rowlen, collen) void {
+    while (i < rowlen) {
+        while (j < collen) {
+            printi(mat[i][j]);
+            println();
+            j = j+1;
+        }
+        j = 0;
+        i = i+1;
+    }
+    return;
+}
+
+i = 0;
+j = 0;
+coe = 2;
+rowlen = 2;
+collen = rowlen;
+
+mat[0][0] = 1;
+mat[0][1] = 2;
+mat[1][0] = 3;
+mat[1][1] = 4;
+
+mult_matrix(mat, coe, i, j, rowlen, collen);
+
+i = 0;
+j = 0;
+
+print_matrix(mat, coe, i, j, rowlen, collen);
+
